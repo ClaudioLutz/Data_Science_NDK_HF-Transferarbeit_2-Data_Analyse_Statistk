@@ -1,0 +1,45 @@
+---
+title: "Shab-Analyse"
+author: "Claudio Lutz"
+date: "2024-07-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+```{r}
+# Install necessary packages if they are not already installed
+if (!require(httr)) install.packages("httr")
+if (!require(XML)) install.packages("XML")
+if (!require(dplyr)) install.packages("dplyr")
+```
+
+```{r}
+# Load necessary packages
+library(httr)
+library(XML)
+library(dplyr)
+```
+
+```{r}
+# Source the Get_Shab_DF function from the external script
+source("get_shab_data.R")
+```
+
+
+```{r}
+# Retrieve data for a specific date
+download_date <- as.Date("2023-07-20")
+shab_data <- Get_Shab_DF(download_date)
+
+# Display the data
+head(shab_data)
+```
+
+```{r}
+shab_data
+```
+
