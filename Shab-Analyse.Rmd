@@ -25,21 +25,26 @@ library(dplyr)
 ```
 
 ```{r}
-# Source the Get_Shab_DF function from the external script
+# Source the functions from the external script
 source("get_shab_data.R")
 ```
 
 
 ```{r}
-# Retrieve data for a specific date
-download_date <- as.Date("2023-07-20")
-shab_data <- Get_Shab_DF(download_date)
+# Retrieve data for a range of dates
+from_date <- as.Date("2023-05-01")
+to_date <- as.Date("2024-07-26")
+shab_data <- Get_Shab_DF_from_range(from_date, to_date)
 
 # Display the data
 head(shab_data)
 ```
 
 ```{r}
-shab_data
+working_data <- shab_data
 ```
+```{r}
+
+```
+
 
