@@ -9,19 +9,26 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-```{r}
+```{r echo=TRUE, results='hide', message=FALSE, warning=FALSE}
 # Install necessary packages if they are not already installed
 if (!require(httr)) install.packages("httr")
 if (!require(XML)) install.packages("XML")
 if (!require(dplyr)) install.packages("dplyr")
+if (!require(ggplot2)) install.packages("ggplot2")
+if (!require(gridExtra)) install.packages("gridExtra")
+if (!require(patchwork)) install.packages("patchwork")
 ```
 
-```{r}
+
+```{r echo=TRUE, results='hide', message=FALSE, warning=FALSE}
 # Load necessary packages
 library(httr)
 library(XML)
+library(ggplot2)
 library(dplyr)
+library(gridExtra)
+library(lubridate)
+library(patchwork)
 ```
 
 ```{r}
@@ -32,19 +39,173 @@ source("get_shab_data.R")
 
 ```{r}
 # Retrieve data for a range of dates
-from_date <- as.Date("2023-05-01")
+from_date <- as.Date("2019-01-01")
 to_date <- as.Date("2024-07-26")
 shab_data <- Get_Shab_DF_from_range(from_date, to_date)
 
 # Display the data
 head(shab_data)
 ```
+```{r}
+# Filter the top 1000 rows
+top_1000_shab_data <- head(shab_data, 1000)
+
+# Save the filtered data frame to a CSV file
+write.csv(top_1000_shab_data, "top_1000_shab_data.csv", row.names = FALSE)
+
+```
 
 ```{r}
-working_data <- shab_data
+# Time Series Plot: Number of entries over time by subrubric using stacked bar
+ggplot(shab_data, aes(x = date, fill = subrubric)) +
+  geom_histogram(binwidth = 7, color = "black", position = "stack") +
+  labs(title = "Number of Entries Over Time by Subrubric", x = "Date", y = "Number of Entries") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+```{r}
+# Create a quarter-year column
+shab_data$quarter_year <- floor_date(shab_data$date, "quarter")
+
+# Summarize the data for line plot
+shab_data_summary <- shab_data %>%
+  group_by(quarter_year, kanton, subrubric) %>%
+  summarise(entries = n()) %>%
+  ungroup()
+
+# Line Plot: Number of entries over time by subrubric, faceted by kanton
+ggplot(shab_data_summary, aes(x = quarter_year, y = entries, color = subrubric)) +
+  geom_line() +
+  labs(title = "Number of Entries Over Time by Subrubric and Kanton", x = "Quarter-Year", y = "Number of Entries") +
+  facet_wrap(~ kanton, scales = "free_y") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        plot.title = element_text(size = 14),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 8),
+        strip.text = element_text(size = 8),
+        legend.text = element_text(size = 8),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+```
+```{r}
+# Convert the date column to Date type
+shab_data$date <- as.Date(shab_data$date)
+
+# Extract year and month from the date
+shab_data$year_month <- format(shab_data$date, "%Y-%m")
+
+# Filter data for subrubric HR01 and HR03
+hr01_data <- subset(shab_data, subrubric == "HR01")
+hr03_data <- subset(shab_data, subrubric == "HR03")
+
+# Count occurrences by year_month
+hr01_counts <- aggregate(id ~ year_month, data = hr01_data, FUN = length)
+hr03_counts <- aggregate(id ~ year_month, data = hr03_data, FUN = length)
+
+# Rename columns for merging
+colnames(hr01_counts) <- c("year_month", "HR01_count")
+colnames(hr03_counts) <- c("year_month", "HR03_count")
+
+# Merge the data on year_month
+monthly_counts <- merge(hr01_counts, hr03_counts, by = "year_month", all = TRUE)
+monthly_counts[is.na(monthly_counts)] <- 0
+
+# Calculate the difference
+monthly_counts$difference <- monthly_counts$HR01_count - monthly_counts$HR03_count
+
+# Create a line graph
+ggplot(monthly_counts, aes(x = as.Date(paste0(year_month, "-01")))) +
+  geom_line(aes(y = HR01_count, color = "HR01 Count")) +
+  geom_line(aes(y = HR03_count, color = "HR03 Count")) +
+  geom_line(aes(y = difference, color = "Difference")) +
+  labs(title = "Monthly Counts and Differences",
+       x = "Month",
+       y = "Count",
+       color = "Legend") +
+  theme_minimal()
+```
+
+```{r}
+# Convert the date column to Date type
+shab_data$date <- as.Date(shab_data$date)
+
+# Extract year and month from the date
+shab_data$year_month <- format(shab_data$date, "%Y-%m")
+
+# Filter data for subrubric HR01 and HR03
+hr01_data <- subset(shab_data, subrubric == "HR01")
+hr03_data <- subset(shab_data, subrubric == "HR03")
+
+# Count occurrences by year_month
+hr01_counts <- aggregate(id ~ year_month, data = hr01_data, FUN = length)
+hr03_counts <- aggregate(id ~ year_month, data = hr03_data, FUN = length)
+
+# Rename columns for merging
+colnames(hr01_counts) <- c("year_month", "HR01_count")
+colnames(hr03_counts) <- c("year_month", "HR03_count")
+
+# Merge the data on year_month
+monthly_counts <- merge(hr01_counts, hr03_counts, by = "year_month", all = TRUE)
+monthly_counts[is.na(monthly_counts)] <- 0
+
+# Calculate the net change for each month
+monthly_counts$net_change <- monthly_counts$HR01_count - monthly_counts$HR03_count
+
+# Calculate the cumulative sum of the net changes
+monthly_counts$cumulative_total <- cumsum(monthly_counts$net_change)
+
+# Create a line graph for the cumulative total
+ggplot(monthly_counts, aes(x = as.Date(paste0(year_month, "-01")))) +
+  geom_line(aes(y = cumulative_total, color = "Cumulative Total")) +
+  labs(title = "Cumulative Total Over Time",
+       x = "Month",
+       y = "Cumulative Total",
+       color = "Legend") +
+  theme_minimal()
 ```
 ```{r}
 
-```
+# Process HR03 data
+hr03_data <- subset(shab_data, subrubric == "HR03")
+hr03_data$month <- format(hr03_data$date, "%m")
+hr03_data$year <- format(hr03_data$date, "%Y")
+hr03_counts <- hr03_data %>%
+  group_by(year, month) %>%
+  summarise(count = n())
 
+# Process HR01 data
+hr01_data <- subset(shab_data, subrubric == "HR01")
+hr01_data$month <- format(hr01_data$date, "%m")
+hr01_data$year <- format(hr01_data$date, "%Y")
+hr01_counts <- hr01_data %>%
+  group_by(year, month) %>%
+  summarise(count = n())
+
+# Create the HR03 plot
+plot_hr03 <- ggplot(hr03_counts, aes(x = month, y = count, group = year, color = year)) +
+  geom_line() +
+  labs(title = "Monthly HR03 Counts by Year",
+       x = "Month",
+       y = "Count",
+       color = "Year") +
+  scale_x_discrete(limits = sprintf("%02d", 1:12)) +
+  theme_minimal()
+
+# Create the HR01 plot
+plot_hr01 <- ggplot(hr01_counts, aes(x = month, y = count, group = year, color = year)) +
+  geom_line() +
+  labs(title = "Monthly HR01 Counts by Year",
+       x = "Month",
+       y = "Count",
+       color = "Year") +
+  scale_x_discrete(limits = sprintf("%02d", 1:12)) +
+  theme_minimal()
+
+# Combine the plots using patchwork
+combined_plot <- plot_hr03 + plot_hr01 + plot_layout(ncol = 1, heights = c(1, 1))
+
+# Print the combined plot
+print(combined_plot)
+```
 
