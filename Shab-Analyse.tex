@@ -1,0 +1,558 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Shab-Analyse},
+  pdfauthor={Claudio Lutz},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Shab-Analyse}
+\author{Claudio Lutz}
+\date{2024-07-28}
+
+\begin{document}
+\maketitle
+
+\subsection{Einführung}\label{einfuxfchrung}
+
+\subsubsection{HR01}\label{hr01}
+
+Dieser Code wird für die Registrierung neuer Unternehmen im
+Handelsregister verwendet. Wenn ein neues Unternehmen gegründet und
+registriert wird, erfolgt die Veröffentlichung unter HR01. Dies umfasst
+Details wie den Firmennamen, den Sitz, den Zweck und die Namen der
+Verwaltungsratsmitglieder oder Geschäftsführer.
+
+\subsubsection{HR03}\label{hr03}
+
+Dieser Code bezieht sich auf die Löschung eines Unternehmens aus dem
+Handelsregister. Dies geschieht, wenn ein Unternehmen aufgelöst,
+liquidiert oder anderweitig nicht mehr als registrierte Einheit
+existiert. Die Löschung muss beantragt werden, wenn beispielsweise ein
+Einzelunternehmen nicht mehr existiert oder an eine andere Person
+übergeht.
+
+Weitere Informationen zu den Eintragungspflichten und -verfahren
+befinden sich auf folgender Seite:
+
+\begin{itemize}
+\tightlist
+\item
+  \href{https://www.kmu.admin.ch/kmu/de/home/praktisches-wissen/kmu-gruenden/firmengruendung/handelsregister.html}{Handelsregister:
+  Rechte und Pflichten für KMU}
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ControlFlowTok{if}\NormalTok{ (}\SpecialCharTok{!}\FunctionTok{require}\NormalTok{(httr)) }\FunctionTok{install.packages}\NormalTok{(}\StringTok{"httr"}\NormalTok{)}
+\ControlFlowTok{if}\NormalTok{ (}\SpecialCharTok{!}\FunctionTok{require}\NormalTok{(XML)) }\FunctionTok{install.packages}\NormalTok{(}\StringTok{"XML"}\NormalTok{)}
+\ControlFlowTok{if}\NormalTok{ (}\SpecialCharTok{!}\FunctionTok{require}\NormalTok{(dplyr)) }\FunctionTok{install.packages}\NormalTok{(}\StringTok{"dplyr"}\NormalTok{)}
+\ControlFlowTok{if}\NormalTok{ (}\SpecialCharTok{!}\FunctionTok{require}\NormalTok{(ggplot2)) }\FunctionTok{install.packages}\NormalTok{(}\StringTok{"ggplot2"}\NormalTok{)}
+\ControlFlowTok{if}\NormalTok{ (}\SpecialCharTok{!}\FunctionTok{require}\NormalTok{(gridExtra)) }\FunctionTok{install.packages}\NormalTok{(}\StringTok{"gridExtra"}\NormalTok{)}
+\ControlFlowTok{if}\NormalTok{ (}\SpecialCharTok{!}\FunctionTok{require}\NormalTok{(patchwork)) }\FunctionTok{install.packages}\NormalTok{(}\StringTok{"patchwork"}\NormalTok{)}
+\ControlFlowTok{if}\NormalTok{ (}\SpecialCharTok{!}\FunctionTok{require}\NormalTok{(skimr)) }\FunctionTok{install.packages}\NormalTok{(}\StringTok{"skimr"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(httr)}
+\FunctionTok{library}\NormalTok{(XML)}
+\FunctionTok{library}\NormalTok{(ggplot2)}
+\FunctionTok{library}\NormalTok{(dplyr)}
+\FunctionTok{library}\NormalTok{(gridExtra)}
+\FunctionTok{library}\NormalTok{(lubridate)}
+\FunctionTok{library}\NormalTok{(patchwork)}
+\FunctionTok{library}\NormalTok{(skimr)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Source the functions from the external script}
+\FunctionTok{source}\NormalTok{(}\StringTok{"get\_shab\_data.R"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Scrape alle relevanten Shab{-}Daten über einen Zeitraum. Es werden nur die Daten herunterladen welche noch nicht lokal gespeichert sind.}
+\NormalTok{from\_date }\OtherTok{\textless{}{-}} \FunctionTok{as.Date}\NormalTok{(}\StringTok{"2018{-}03{-}18"}\NormalTok{)}
+\NormalTok{to\_date }\OtherTok{\textless{}{-}} \FunctionTok{as.Date}\NormalTok{(}\StringTok{"2024{-}07{-}26"}\NormalTok{)}
+\NormalTok{shab\_data }\OtherTok{\textless{}{-}} \FunctionTok{Get\_Shab\_DF\_from\_range}\NormalTok{(from\_date, to\_date)}
+
+\CommentTok{\# Display the data}
+\FunctionTok{skim}\NormalTok{(shab\_data)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[]{@{}ll@{}}
+\caption{Data summary}\tabularnewline
+\toprule\noalign{}
+\endfirsthead
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Name & shab\_data \\
+Number of rows & 465413 \\
+Number of columns & 8 \\
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ & \\
+Column type frequency: & \\
+character & 7 \\
+Date & 1 \\
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ & \\
+Group variables & None \\
+\end{longtable}
+
+\textbf{Variable type: character}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.2564}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1282}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1795}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.0513}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.0513}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.0769}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1154}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1410}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+skim\_variable
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+n\_missing
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+complete\_rate
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+min
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+max
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+empty
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+n\_unique
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+whitespace
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+id & 0 & 1 & 36 & 36 & 0 & 465413 & 0 \\
+title & 0 & 1 & 19 & 223 & 0 & 464400 & 0 \\
+rubric & 0 & 1 & 2 & 2 & 0 & 1 & 0 \\
+subrubric & 0 & 1 & 4 & 4 & 0 & 2 & 0 \\
+publikations\_status & 0 & 1 & 9 & 9 & 0 & 1 & 0 \\
+primaryTenantCode & 0 & 1 & 4 & 4 & 0 & 1 & 0 \\
+kanton & 0 & 1 & 2 & 2 & 0 & 26 & 0 \\
+\end{longtable}
+
+\textbf{Variable type: Date}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1750}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1250}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1750}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1375}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1375}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1375}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1125}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+skim\_variable
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+n\_missing
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+complete\_rate
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+min
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+max
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+median
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+n\_unique
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+date & 0 & 1 & 2018-09-03 & 2024-07-26 & 2021-09-21 & 1497 \\
+\end{longtable}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Filter the top 1000 rows}
+\NormalTok{top\_1000\_shab\_data }\OtherTok{\textless{}{-}} \FunctionTok{head}\NormalTok{(shab\_data, }\DecValTok{1000}\NormalTok{)}
+
+\CommentTok{\# Save the filtered data frame to a CSV file}
+\FunctionTok{write.csv}\NormalTok{(top\_1000\_shab\_data, }\StringTok{"top\_1000\_shab\_data.csv"}\NormalTok{, }\AttributeTok{row.names =} \ConstantTok{FALSE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Time Series Plot: Number of entries over time by subrubric using stacked bar}
+\FunctionTok{ggplot}\NormalTok{(shab\_data, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ date, }\AttributeTok{fill =}\NormalTok{ subrubric)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_histogram}\NormalTok{(}\AttributeTok{binwidth =} \DecValTok{7}\NormalTok{, }\AttributeTok{position =} \StringTok{"stack"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Number of Entries Over Time by Subrubric"}\NormalTok{, }\AttributeTok{x =} \StringTok{"Date"}\NormalTok{, }\AttributeTok{y =} \StringTok{"Number of Entries"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}\AttributeTok{legend.position =} \StringTok{"bottom"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Shab-Analyse_files/figure-latex/unnamed-chunk-6-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Create a quarter{-}year column}
+\NormalTok{shab\_data}\SpecialCharTok{$}\NormalTok{quarter\_year }\OtherTok{\textless{}{-}} \FunctionTok{floor\_date}\NormalTok{(shab\_data}\SpecialCharTok{$}\NormalTok{date, }\StringTok{"quarter"}\NormalTok{)}
+
+\CommentTok{\# Summarize the data for line plot}
+\NormalTok{shab\_data\_summary }\OtherTok{\textless{}{-}}\NormalTok{ shab\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(quarter\_year, kanton, subrubric) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarise}\NormalTok{(}\AttributeTok{entries =} \FunctionTok{n}\NormalTok{()) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ungroup}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## `summarise()` has grouped output by 'quarter_year', 'kanton'. You can override
+## using the `.groups` argument.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Line Plot: Number of entries over time by subrubric, faceted by kanton}
+\FunctionTok{ggplot}\NormalTok{(shab\_data\_summary, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ quarter\_year, }\AttributeTok{y =}\NormalTok{ entries, }\AttributeTok{color =}\NormalTok{ subrubric)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Number of Entries Over Time by Subrubric and Kanton"}\NormalTok{, }\AttributeTok{x =} \StringTok{"Quarter{-}Year"}\NormalTok{, }\AttributeTok{y =} \StringTok{"Number of Entries"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{facet\_wrap}\NormalTok{(}\SpecialCharTok{\textasciitilde{}}\NormalTok{ kanton, }\AttributeTok{scales =} \StringTok{"free\_y"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}\AttributeTok{legend.position =} \StringTok{"bottom"}\NormalTok{,}
+        \AttributeTok{plot.title =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{14}\NormalTok{),}
+        \AttributeTok{axis.title =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{10}\NormalTok{),}
+        \AttributeTok{axis.text =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{8}\NormalTok{),}
+        \AttributeTok{strip.text =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{8}\NormalTok{),}
+        \AttributeTok{legend.text =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{8}\NormalTok{),}
+        \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{angle =} \DecValTok{90}\NormalTok{, }\AttributeTok{vjust =} \FloatTok{0.5}\NormalTok{, }\AttributeTok{hjust =} \DecValTok{1}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Shab-Analyse_files/figure-latex/unnamed-chunk-7-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Load necessary libraries}
+\FunctionTok{library}\NormalTok{(ggplot2)}
+\FunctionTok{library}\NormalTok{(dplyr)}
+\FunctionTok{library}\NormalTok{(scales)}
+
+\CommentTok{\# Convert the date column to Date type}
+\NormalTok{shab\_data}\SpecialCharTok{$}\NormalTok{date }\OtherTok{\textless{}{-}} \FunctionTok{as.Date}\NormalTok{(shab\_data}\SpecialCharTok{$}\NormalTok{date)}
+
+\CommentTok{\# Extract year and month from the date}
+\NormalTok{shab\_data}\SpecialCharTok{$}\NormalTok{year\_month }\OtherTok{\textless{}{-}} \FunctionTok{format}\NormalTok{(shab\_data}\SpecialCharTok{$}\NormalTok{date, }\StringTok{"\%Y{-}\%m"}\NormalTok{)}
+
+\CommentTok{\# Filter data for subrubric HR01 and HR03}
+\NormalTok{hr01\_data }\OtherTok{\textless{}{-}} \FunctionTok{subset}\NormalTok{(shab\_data, subrubric }\SpecialCharTok{==} \StringTok{"HR01"}\NormalTok{)}
+\NormalTok{hr03\_data }\OtherTok{\textless{}{-}} \FunctionTok{subset}\NormalTok{(shab\_data, subrubric }\SpecialCharTok{==} \StringTok{"HR03"}\NormalTok{)}
+
+\CommentTok{\# Count occurrences by year\_month}
+\NormalTok{hr01\_counts }\OtherTok{\textless{}{-}} \FunctionTok{aggregate}\NormalTok{(id }\SpecialCharTok{\textasciitilde{}}\NormalTok{ year\_month, }\AttributeTok{data =}\NormalTok{ hr01\_data, }\AttributeTok{FUN =}\NormalTok{ length)}
+\NormalTok{hr03\_counts }\OtherTok{\textless{}{-}} \FunctionTok{aggregate}\NormalTok{(id }\SpecialCharTok{\textasciitilde{}}\NormalTok{ year\_month, }\AttributeTok{data =}\NormalTok{ hr03\_data, }\AttributeTok{FUN =}\NormalTok{ length)}
+
+\CommentTok{\# Rename columns for merging}
+\FunctionTok{colnames}\NormalTok{(hr01\_counts) }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"year\_month"}\NormalTok{, }\StringTok{"HR01\_count"}\NormalTok{)}
+\FunctionTok{colnames}\NormalTok{(hr03\_counts) }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"year\_month"}\NormalTok{, }\StringTok{"HR03\_count"}\NormalTok{)}
+
+\CommentTok{\# Merge the data on year\_month}
+\NormalTok{monthly\_counts }\OtherTok{\textless{}{-}} \FunctionTok{merge}\NormalTok{(hr01\_counts, hr03\_counts, }\AttributeTok{by =} \StringTok{"year\_month"}\NormalTok{, }\AttributeTok{all =} \ConstantTok{TRUE}\NormalTok{)}
+\NormalTok{monthly\_counts[}\FunctionTok{is.na}\NormalTok{(monthly\_counts)] }\OtherTok{\textless{}{-}} \DecValTok{0}
+
+\CommentTok{\# Calculate the difference}
+\NormalTok{monthly\_counts}\SpecialCharTok{$}\NormalTok{difference }\OtherTok{\textless{}{-}}\NormalTok{ monthly\_counts}\SpecialCharTok{$}\NormalTok{HR01\_count }\SpecialCharTok{{-}}\NormalTok{ monthly\_counts}\SpecialCharTok{$}\NormalTok{HR03\_count}
+
+\CommentTok{\# Normalize the difference for plotting}
+\NormalTok{max\_count }\OtherTok{\textless{}{-}} \FunctionTok{max}\NormalTok{(monthly\_counts}\SpecialCharTok{$}\NormalTok{HR01\_count, monthly\_counts}\SpecialCharTok{$}\NormalTok{HR03\_count)}
+\NormalTok{max\_difference }\OtherTok{\textless{}{-}} \FunctionTok{max}\NormalTok{(}\FunctionTok{abs}\NormalTok{(monthly\_counts}\SpecialCharTok{$}\NormalTok{difference))}
+\NormalTok{scale\_factor }\OtherTok{\textless{}{-}}\NormalTok{ max\_count }\SpecialCharTok{/}\NormalTok{ max\_difference}
+\NormalTok{monthly\_counts}\SpecialCharTok{$}\NormalTok{scaled\_difference }\OtherTok{\textless{}{-}}\NormalTok{ monthly\_counts}\SpecialCharTok{$}\NormalTok{difference }\SpecialCharTok{*}\NormalTok{ scale\_factor}
+
+\CommentTok{\# Create the plot with a secondary y{-}axis}
+\FunctionTok{ggplot}\NormalTok{(monthly\_counts, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =} \FunctionTok{as.Date}\NormalTok{(}\FunctionTok{paste0}\NormalTok{(year\_month, }\StringTok{"{-}01"}\NormalTok{)))) }\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{y =}\NormalTok{ HR01\_count, }\AttributeTok{color =} \StringTok{"HR01 Count"}\NormalTok{)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{y =}\NormalTok{ HR03\_count, }\AttributeTok{color =} \StringTok{"HR03 Count"}\NormalTok{)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{y =}\NormalTok{ scaled\_difference, }\AttributeTok{color =} \StringTok{"Difference"}\NormalTok{)) }\SpecialCharTok{+}
+  \FunctionTok{scale\_y\_continuous}\NormalTok{(}
+    \AttributeTok{name =} \StringTok{"Count"}\NormalTok{,}
+    \AttributeTok{sec.axis =} \FunctionTok{sec\_axis}\NormalTok{(}\SpecialCharTok{\textasciitilde{}}\NormalTok{ . }\SpecialCharTok{/}\NormalTok{ scale\_factor, }\AttributeTok{name =} \StringTok{"Difference"}\NormalTok{)}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Monthly Counts and Differences"}\NormalTok{,}
+       \AttributeTok{x =} \StringTok{"Month"}\NormalTok{,}
+       \AttributeTok{color =} \StringTok{"Legend"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}\AttributeTok{legend.position =} \StringTok{"bottom"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Shab-Analyse_files/figure-latex/unnamed-chunk-8-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Convert the date column to Date type}
+\NormalTok{shab\_data}\SpecialCharTok{$}\NormalTok{date }\OtherTok{\textless{}{-}} \FunctionTok{as.Date}\NormalTok{(shab\_data}\SpecialCharTok{$}\NormalTok{date)}
+
+\CommentTok{\# Extract year and month from the date}
+\NormalTok{shab\_data}\SpecialCharTok{$}\NormalTok{year\_month }\OtherTok{\textless{}{-}} \FunctionTok{format}\NormalTok{(shab\_data}\SpecialCharTok{$}\NormalTok{date, }\StringTok{"\%Y{-}\%m"}\NormalTok{)}
+
+\CommentTok{\# Filter data for subrubric HR01 and HR03}
+\NormalTok{hr01\_data }\OtherTok{\textless{}{-}} \FunctionTok{subset}\NormalTok{(shab\_data, subrubric }\SpecialCharTok{==} \StringTok{"HR01"}\NormalTok{)}
+\NormalTok{hr03\_data }\OtherTok{\textless{}{-}} \FunctionTok{subset}\NormalTok{(shab\_data, subrubric }\SpecialCharTok{==} \StringTok{"HR03"}\NormalTok{)}
+
+\CommentTok{\# Count occurrences by year\_month}
+\NormalTok{hr01\_counts }\OtherTok{\textless{}{-}} \FunctionTok{aggregate}\NormalTok{(id }\SpecialCharTok{\textasciitilde{}}\NormalTok{ year\_month, }\AttributeTok{data =}\NormalTok{ hr01\_data, }\AttributeTok{FUN =}\NormalTok{ length)}
+\NormalTok{hr03\_counts }\OtherTok{\textless{}{-}} \FunctionTok{aggregate}\NormalTok{(id }\SpecialCharTok{\textasciitilde{}}\NormalTok{ year\_month, }\AttributeTok{data =}\NormalTok{ hr03\_data, }\AttributeTok{FUN =}\NormalTok{ length)}
+
+\CommentTok{\# Rename columns for merging}
+\FunctionTok{colnames}\NormalTok{(hr01\_counts) }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"year\_month"}\NormalTok{, }\StringTok{"HR01\_count"}\NormalTok{)}
+\FunctionTok{colnames}\NormalTok{(hr03\_counts) }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"year\_month"}\NormalTok{, }\StringTok{"HR03\_count"}\NormalTok{)}
+
+\CommentTok{\# Merge the data on year\_month}
+\NormalTok{monthly\_counts }\OtherTok{\textless{}{-}} \FunctionTok{merge}\NormalTok{(hr01\_counts, hr03\_counts, }\AttributeTok{by =} \StringTok{"year\_month"}\NormalTok{, }\AttributeTok{all =} \ConstantTok{TRUE}\NormalTok{)}
+\NormalTok{monthly\_counts[}\FunctionTok{is.na}\NormalTok{(monthly\_counts)] }\OtherTok{\textless{}{-}} \DecValTok{0}
+
+\CommentTok{\# Calculate the net change for each month}
+\NormalTok{monthly\_counts}\SpecialCharTok{$}\NormalTok{net\_change }\OtherTok{\textless{}{-}}\NormalTok{ monthly\_counts}\SpecialCharTok{$}\NormalTok{HR01\_count }\SpecialCharTok{{-}}\NormalTok{ monthly\_counts}\SpecialCharTok{$}\NormalTok{HR03\_count}
+
+\CommentTok{\# Calculate the cumulative sum of the net changes}
+\NormalTok{monthly\_counts}\SpecialCharTok{$}\NormalTok{cumulative\_total }\OtherTok{\textless{}{-}} \FunctionTok{cumsum}\NormalTok{(monthly\_counts}\SpecialCharTok{$}\NormalTok{net\_change)}
+
+\CommentTok{\# Create the cumulative total plot}
+\NormalTok{plot\_cumulative }\OtherTok{\textless{}{-}} \FunctionTok{ggplot}\NormalTok{(monthly\_counts, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =} \FunctionTok{as.Date}\NormalTok{(}\FunctionTok{paste0}\NormalTok{(year\_month, }\StringTok{"{-}01"}\NormalTok{)))) }\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{y =}\NormalTok{ cumulative\_total, }\AttributeTok{color =} \StringTok{"Cumulative Total"}\NormalTok{)) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Cumulative Total Over Time"}\NormalTok{,}
+       \AttributeTok{x =} \StringTok{"Month"}\NormalTok{,}
+       \AttributeTok{y =} \StringTok{"Cumulative Total"}\NormalTok{,}
+       \AttributeTok{color =} \StringTok{"Legend"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{guides}\NormalTok{(}\AttributeTok{color =} \FunctionTok{guide\_legend}\NormalTok{(}\AttributeTok{title =} \StringTok{"Cumulative Total"}\NormalTok{))}
+
+\CommentTok{\# Create the log scale plot without the legend}
+\NormalTok{plot\_log\_scale }\OtherTok{\textless{}{-}} \FunctionTok{ggplot}\NormalTok{(monthly\_counts, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =} \FunctionTok{as.Date}\NormalTok{(}\FunctionTok{paste0}\NormalTok{(year\_month, }\StringTok{"{-}01"}\NormalTok{)))) }\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{y =}\NormalTok{ cumulative\_total, }\AttributeTok{color =} \StringTok{"Cumulative Total"}\NormalTok{)) }\SpecialCharTok{+}
+  \FunctionTok{scale\_y\_log10}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Cumulative Total Over Time (Log Scale)"}\NormalTok{,}
+       \AttributeTok{x =} \StringTok{"Month"}\NormalTok{,}
+       \AttributeTok{y =} \StringTok{"Cumulative Total (Log Scale)"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}\AttributeTok{legend.position =} \StringTok{"none"}\NormalTok{)}
+
+\CommentTok{\# Combine the two plots using patchwork}
+\NormalTok{combined\_plot }\OtherTok{\textless{}{-}}\NormalTok{ plot\_cumulative }\SpecialCharTok{+}\NormalTok{ plot\_log\_scale }\SpecialCharTok{+} \FunctionTok{plot\_layout}\NormalTok{(}\AttributeTok{ncol =} \DecValTok{2}\NormalTok{)}
+
+\CommentTok{\# Print the combined plot}
+\FunctionTok{print}\NormalTok{(combined\_plot)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Shab-Analyse_files/figure-latex/unnamed-chunk-9-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{current\_year }\OtherTok{\textless{}{-}} \FunctionTok{format}\NormalTok{(}\FunctionTok{Sys.Date}\NormalTok{(), }\StringTok{"\%Y"}\NormalTok{)}
+
+\CommentTok{\# Process HR03 data}
+\NormalTok{hr03\_data }\OtherTok{\textless{}{-}} \FunctionTok{subset}\NormalTok{(shab\_data, subrubric }\SpecialCharTok{==} \StringTok{"HR03"}\NormalTok{)}
+\NormalTok{hr03\_data}\SpecialCharTok{$}\NormalTok{month }\OtherTok{\textless{}{-}} \FunctionTok{format}\NormalTok{(hr03\_data}\SpecialCharTok{$}\NormalTok{date, }\StringTok{"\%m"}\NormalTok{)}
+\NormalTok{hr03\_data}\SpecialCharTok{$}\NormalTok{year }\OtherTok{\textless{}{-}} \FunctionTok{format}\NormalTok{(hr03\_data}\SpecialCharTok{$}\NormalTok{date, }\StringTok{"\%Y"}\NormalTok{)}
+\NormalTok{hr03\_counts }\OtherTok{\textless{}{-}}\NormalTok{ hr03\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(year, month) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarise}\NormalTok{(}\AttributeTok{count =} \FunctionTok{n}\NormalTok{())}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## `summarise()` has grouped output by 'year'. You can override using the
+## `.groups` argument.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Process HR01 data}
+\NormalTok{hr01\_data }\OtherTok{\textless{}{-}} \FunctionTok{subset}\NormalTok{(shab\_data, subrubric }\SpecialCharTok{==} \StringTok{"HR01"}\NormalTok{)}
+\NormalTok{hr01\_data}\SpecialCharTok{$}\NormalTok{month }\OtherTok{\textless{}{-}} \FunctionTok{format}\NormalTok{(hr01\_data}\SpecialCharTok{$}\NormalTok{date, }\StringTok{"\%m"}\NormalTok{)}
+\NormalTok{hr01\_data}\SpecialCharTok{$}\NormalTok{year }\OtherTok{\textless{}{-}} \FunctionTok{format}\NormalTok{(hr01\_data}\SpecialCharTok{$}\NormalTok{date, }\StringTok{"\%Y"}\NormalTok{)}
+\NormalTok{hr01\_counts }\OtherTok{\textless{}{-}}\NormalTok{ hr01\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(year, month) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarise}\NormalTok{(}\AttributeTok{count =} \FunctionTok{n}\NormalTok{())}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## `summarise()` has grouped output by 'year'. You can override using the
+## `.groups` argument.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Define line sizes}
+\NormalTok{line\_size\_current }\OtherTok{\textless{}{-}} \DecValTok{1}
+\NormalTok{line\_size\_other }\OtherTok{\textless{}{-}} \FloatTok{0.5}
+
+\CommentTok{\# Create the HR03 plot with adjusted line sizes}
+\NormalTok{plot\_hr03 }\OtherTok{\textless{}{-}} \FunctionTok{ggplot}\NormalTok{(hr03\_counts, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ month, }\AttributeTok{y =}\NormalTok{ count, }\AttributeTok{group =}\NormalTok{ year, }\AttributeTok{color =}\NormalTok{ year)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{size =} \FunctionTok{ifelse}\NormalTok{(year }\SpecialCharTok{==}\NormalTok{ current\_year, line\_size\_current, line\_size\_other))) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Monthly HR03 Counts by Year"}\NormalTok{,}
+       \AttributeTok{x =} \StringTok{"Month"}\NormalTok{,}
+       \AttributeTok{y =} \StringTok{"Count"}\NormalTok{,}
+       \AttributeTok{color =} \StringTok{"Year"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{scale\_x\_discrete}\NormalTok{(}\AttributeTok{limits =} \FunctionTok{sprintf}\NormalTok{(}\StringTok{"\%02d"}\NormalTok{, }\DecValTok{1}\SpecialCharTok{:}\DecValTok{12}\NormalTok{)) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{scale\_size\_identity}\NormalTok{() }\SpecialCharTok{+}  \CommentTok{\# Ensure size is used as is}
+  \FunctionTok{guides}\NormalTok{(}\AttributeTok{size =} \StringTok{"none"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+## i Please use `linewidth` instead.
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+## generated.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Create the HR01 plot with adjusted line sizes}
+\NormalTok{plot\_hr01 }\OtherTok{\textless{}{-}} \FunctionTok{ggplot}\NormalTok{(hr01\_counts, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ month, }\AttributeTok{y =}\NormalTok{ count, }\AttributeTok{group =}\NormalTok{ year, }\AttributeTok{color =}\NormalTok{ year)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{size =} \FunctionTok{ifelse}\NormalTok{(year }\SpecialCharTok{==}\NormalTok{ current\_year, line\_size\_current, line\_size\_other))) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Monthly HR01 Counts by Year"}\NormalTok{,}
+       \AttributeTok{x =} \StringTok{"Month"}\NormalTok{,}
+       \AttributeTok{y =} \StringTok{"Count"}\NormalTok{,}
+       \AttributeTok{color =} \StringTok{"Year"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{scale\_x\_discrete}\NormalTok{(}\AttributeTok{limits =} \FunctionTok{sprintf}\NormalTok{(}\StringTok{"\%02d"}\NormalTok{, }\DecValTok{1}\SpecialCharTok{:}\DecValTok{12}\NormalTok{)) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{scale\_size\_identity}\NormalTok{() }\SpecialCharTok{+}  \CommentTok{\# Ensure size is used as is}
+  \FunctionTok{guides}\NormalTok{(}\AttributeTok{size =} \StringTok{"none"}\NormalTok{)}
+
+\CommentTok{\# Combine the plots using patchwork}
+\NormalTok{combined\_plot }\OtherTok{\textless{}{-}}\NormalTok{ plot\_hr03 }\SpecialCharTok{+}\NormalTok{ plot\_hr01 }\SpecialCharTok{+} \FunctionTok{plot\_layout}\NormalTok{(}\AttributeTok{ncol =} \DecValTok{1}\NormalTok{, }\AttributeTok{heights =} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{))}
+
+\CommentTok{\# Print the combined plot}
+\FunctionTok{print}\NormalTok{(combined\_plot)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Shab-Analyse_files/figure-latex/unnamed-chunk-10-1.pdf}
+
+\end{document}
