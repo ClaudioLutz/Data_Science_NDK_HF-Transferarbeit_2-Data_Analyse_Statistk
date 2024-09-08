@@ -40,6 +40,7 @@ if (!require(broom)) install.packages("broom")
 if (!require(forecast)) install.packages("forecast")
 if (!require(scales)) install.packages("scales")
 if (!require(tidyr)) install.packages("tidyr")
+if (!require(tidytext)) install.packages("tidytext")
 ```
 
 
@@ -56,6 +57,7 @@ library(broom)
 library(forecast)
 library(scales)
 library(tidyr)
+library(tidytext)
 source("get_shab_data.R")
 ```
 
@@ -135,32 +137,243 @@ p <- ggplot(final_data, aes(x = month)) +
 # Add Netto Zuwachs as a separate bar without stacking
 p + geom_col(data = final_data, aes(x = month, y = NettoZuwachs, fill = "Netto Zuwachs"), width = 0.3, color = "black", position = position_dodge(width = 0.9))
 ```
+```{r}
 
-```{r warning=FALSE}
-# Create a quarter-year column
-shab_data$quarter_year <- floor_date(shab_data$date, "quarter")
 
-# Summarize the data for line plot
-shab_data_summary <- shab_data %>%
-  group_by(quarter_year, kanton, subrubric) %>%
-  summarise(entries = n()) %>%
-  ungroup()
+# Group the data by Kanton and subrubric, then aggregate
+agg_data_kanton <- data %>%
+  group_by(kanton, subrubric) %>%
+  summarise(count = n(), .groups = "drop")
 
-# Line Plot: Number of entries over time by subrubric, faceted by kanton
-ggplot(shab_data_summary, aes(x = quarter_year, y = entries, color = subrubric)) +
-  geom_line() +
-  labs(title = "Number of Entries Over Time by Subrubric and Kanton", x = "Quarter-Year", y = "Number of Entries") +
-  facet_wrap(~ kanton, scales = "free_y") +
+# Ensure all Kantons have both subrubrics (HR01 and HR03)
+all_kantons <- unique(agg_data_kanton$kanton)
+all_subrubrics <- c("HR01", "HR03")
+complete_data_kanton <- expand.grid(kanton = all_kantons, subrubric = all_subrubrics) %>%
+  left_join(agg_data_kanton, by = c("kanton", "subrubric")) %>%
+  mutate(count = ifelse(is.na(count), 0, count))
+
+# Calculate the difference between HR01 and HR03 as Netto Zuwachs
+difference_data_kanton <- complete_data_kanton %>%
+  spread(key = subrubric, value = count) %>%
+  mutate(NettoZuwachs = HR01 - abs(HR03)) %>%
+  select(kanton, NettoZuwachs)
+
+# Merge the difference data back with the complete_data
+final_data_kanton <- complete_data_kanton %>%
+  left_join(difference_data_kanton, by = "kanton") %>%
+  arrange(NettoZuwachs, kanton) %>%  # Break ties by alphabetical order of Kanton
+  mutate(kanton = factor(kanton, levels = unique(kanton)))  # Convert kanton to a factor with ordered levels
+
+# Transform counts: HR03 to negative values
+final_data_kanton <- final_data_kanton %>%
+  mutate(count = ifelse(subrubric == "HR03", -count, count))
+
+# Plot HR01 and HR03 with stacking
+p <- ggplot(final_data_kanton, aes(x = kanton)) +
+  geom_col(aes(y = count, fill = subrubric), position = "stack") +
+  geom_hline(yintercept = 0, color = "black") +
+  scale_y_continuous(labels = abs) +
+  scale_fill_manual(values = c("HR01" = "#1f77b4", "HR03" = "#ff7f0e", "Netto Zuwachs" = "gray50")) +
+  labs(
+    title = "Kanton-wise Subrubric Counts Ordered by Netto Zuwachs",
+    x = "Kanton",
+    y = "Number of Records",
+    fill = "Subrubric"
+  ) +
   theme_minimal() +
-  theme(legend.position = "bottom",
-        plot.title = element_text(size = 14),
-        axis.title = element_text(size = 10),
-        axis.text = element_text(size = 8),
-        strip.text = element_text(size = 8),
-        legend.text = element_text(size = 8),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major.y = element_line(color = "grey80"),
+    panel.grid.minor.y = element_blank()
+  )
+
+# Add Netto Zuwachs as a separate bar without stacking
+p + geom_col(data = final_data_kanton, aes(x = kanton, y = NettoZuwachs, fill = "Netto Zuwachs"), width = 0.3, color = "black", position = position_dodge(width = 0.9))
+```
+```{r}
+# Calculate relative contributions of HR01 and HR03
+relative_contribution <- complete_data_kanton %>%
+  group_by(kanton, subrubric) %>%
+  summarise(total_count = sum(count), .groups = 'drop') %>%
+  group_by(kanton) %>%
+  mutate(percentage = total_count / sum(total_count) * 100)
+
+# Order Kantons by the percentage of HR01
+ordered_kantons <- relative_contribution %>%
+  filter(subrubric == "HR01") %>%
+  arrange(desc(percentage)) %>%
+  pull(kanton)
+
+relative_contribution <- relative_contribution %>%
+  mutate(kanton = factor(kanton, levels = ordered_kantons))
+
+# Plot relative contributions by Kanton
+ggplot(relative_contribution, aes(x = kanton, y = percentage, fill = subrubric)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +  # Flip coordinates for better readability
+  labs(
+    title = "Relative Contribution of HR01 and HR03 by Kanton",
+    x = "Kanton",
+    y = "Percentage",
+    fill = "Subrubric"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 
 ```
+
+```{r}
+dp <- 5
+relative_contribution2 <- relative_contribution %>%
+  arrange(kanton, subrubric) %>%
+  group_by(kanton) %>%
+  mutate(y_text = percentage[2] + c(1, -1) * dp)
+```
+
+
+```{r}
+# Plot with y-axis range limitation and visible labels
+ggplot(relative_contribution, aes(x = kanton, y = percentage, fill = subrubric)) +
+  geom_bar(stat = "identity", color = "black") +  # Keep bar borders
+  coord_flip() +  # Flip coordinates for better readability
+  coord_cartesian(ylim = c(30, 50)) +  # Set y-axis range to zoom in
+  geom_text(
+    aes(label = round(percentage, 1)), 
+    position = position_stack(vjust = 0.5), 
+    size = 3, 
+    color = "black"  # Choose a color that contrasts with the bar color
+  ) +  
+  labs(
+    title = "Relative Contribution of HR01 and HR03 by Kanton",
+    x = "Kanton",
+    y = "Percentage",
+    fill = "Subrubric"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+
+```
+
+
+```{r}
+# Plot with separate label positions for HR01 and HR03
+ggplot(relative_contribution2, aes(x = kanton, y = percentage, fill = subrubric)) +
+  geom_col(color = "black") +  # Keep bar borders
+  #coord_flip() +  # Flip coordinates for better readability
+  coord_cartesian(ylim = c(30, 50)) +  # Set y-axis range to zoom in
+  
+  # Labels for HR01 at the bottom of the bars
+  geom_text(
+    aes(label = round(percentage, 1), y = y_text), 
+    size = 3, 
+    color = "black"
+  ) +
+
+  labs(
+    title = "Relative Contribution of HR01 and HR03 by Kanton",
+    x = "Kanton",
+    y = "Percentage",
+    fill = "Subrubric"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+
+```
+
+```{r,fig.width=10, fig.height=10, echo=FALSE}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(patchwork)  # For combining plots into a grid
+
+# Ensure that the date is in Date format and extract the year
+data$date <- as.Date(data$date)
+data$year <- format(data$date, "%Y")
+
+# Aggregate the data by year, kanton, and subrubric, then calculate percentages
+agg_data <- data %>%
+  group_by(year, kanton, subrubric) %>%
+  summarise(total_count = n(), .groups = 'drop') %>%
+  group_by(year, kanton) %>%
+  mutate(percentage = total_count / sum(total_count) * 100)
+
+# Create the overview plot with data over all years
+overview_plot <- ggplot(agg_data, aes(x = kanton, y = percentage, fill = subrubric)) +
+  geom_bar(stat = "identity", width = 0.8) +
+  labs(
+    title = "Overall Contribution of HR01 and HR03 by Kanton",
+    fill = "Subrubric"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text.y = element_text(size = 10),
+    axis.title.x = element_blank(),  # Remove x-axis title
+    axis.title.y = element_blank(),  # Remove y-axis title
+    legend.position = "top",  # Legend at the top
+    legend.direction = "horizontal"
+  )
+
+# Create an empty list to store the plots
+plots <- list()
+
+# Loop through each year
+for (yr in unique(agg_data$year)) {
+  
+  # Filter the data for the current year
+  year_data <- agg_data %>% filter(year == yr)
+  
+  # Determine the order of Kantons based on HR01 percentage within the current year
+  hr01_order <- year_data %>%
+    filter(subrubric == "HR01") %>%
+    arrange(desc(percentage)) %>%
+    pull(kanton)
+  
+  # Apply the ordering to the year's data
+  year_data <- year_data %>%
+    mutate(kanton = factor(kanton, levels = hr01_order))
+  
+  # Create the plot for the current year without the legend
+  p <- ggplot(year_data, aes(x = kanton, y = percentage, fill = subrubric)) +
+    geom_bar(stat = "identity", width = 0.8) +
+    labs(
+      title = paste(yr)
+    ) +
+    theme_minimal() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      axis.text.y = element_text(size = 10),
+      strip.text = element_text(size = 12),
+      axis.title.x = element_blank(),  # Remove x-axis title
+      axis.title.y = element_blank(),  # Remove y-axis title
+      legend.position = "none"  # Remove legend from individual plots
+    ) +
+    coord_cartesian(ylim = c(30, 55))  # Adjust the y-axis limits with coord_cartesian
+  
+  # Store the plot in the list
+  plots[[yr]] <- p
+}
+
+# Combine the overview plot with the individual year plots using patchwork
+final_plot <- (overview_plot / wrap_plots(plots, ncol = 2)) + 
+  plot_layout(heights = c(2, 10)) +  # Adjust the heights for overview and year plots
+  plot_annotation(title = "Relative Contribution of HR01 and HR03 by Year and Kanton")
+
+# Display the combined plot grid
+final_plot
+
+
+
+```
+
 ```{r warning=FALSE}
 
 # Convert the date column to Date type
@@ -209,6 +422,28 @@ ggplot(monthly_counts, aes(x = as.Date(paste0(year_month, "-01")))) +
   theme_minimal() +
   theme(legend.position = "bottom")
 
+```
+```{r}
+# Create a quarter-year column
+shab_data$quarter_year <- floor_date(shab_data$date, "quarter")
+# Summarize the data for line plot
+shab_data_summary <- shab_data %>%
+  group_by(quarter_year, kanton, subrubric) %>%
+  summarise(entries = n()) %>%
+  ungroup()
+# Line Plot: Number of entries over time by subrubric, faceted by kanton
+ggplot(shab_data_summary, aes(x = quarter_year, y = entries, color = subrubric)) +
+  geom_line() +
+  labs(title = "Number of Entries Over Time by Subrubric and Kanton", x = "Quarter-Year", y = "Number of Entries") +
+  facet_wrap(~ kanton, scales = "free_y") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        plot.title = element_text(size = 14),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 8),
+        strip.text = element_text(size = 8),
+        legend.text = element_text(size = 8),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 ```
 
 ```{r warning=FALSE}
@@ -277,13 +512,57 @@ tidy_results_daily <- tidy(lm_model_daily, conf.int = TRUE)
 tidy_results_daily
 
 # Plot regression line with confidence interval
-ggplot(daily_counts, aes(x = HR03_count, y = HR01_count)) +
+ggplot(daily_counts, aes(x = HR03_count, y = HR01_count, colour = factor(wday(date)))) +
   geom_point() +
-  geom_smooth(method = "lm", se = TRUE, color = "blue") +
+  geom_smooth(method = "lm", se = TRUE) +
   labs(title = "Linear Regression of HR01 Count on HR03 Count (Daily Data)",
        x = "HR03 Count",
        y = "HR01 Count") +
   theme_minimal()
+```
+
+```{r}
+ggplot(daily_counts, aes(x = HR03_count, y = HR01_count)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(title = "Linear Regression of HR01 Count on HR03 Count (Daily Data)",
+       x = "HR03 Count",
+       y = "HR01 Count") +
+  theme_minimal()
+```
+
+
+
+```{r}
+
+count_per_date <- shab_data %>%
+  group_by(date, subrubric) %>%
+  summarise(count = n())
+
+hr03_data <- count_per_date %>% filter(subrubric == "HR03")
+hr01_data <- count_per_date %>% filter(subrubric == "HR01")
+
+fit_hr03 <- lm(count ~ date, data = hr03_data)
+fit_hr01 <- lm(count ~ date, data = hr01_data)
+
+intercept_hr03 <- coef(fit_hr03)[1]
+slope_hr03 <- coef(fit_hr03)[2]
+
+intercept_hr01 <- coef(fit_hr01)[1]
+slope_hr01 <- coef(fit_hr01)[2]
+
+# Plot both subrubrics in the same plot with thicker regression lines
+ggplot(count_per_date, aes(x = date, y = count, color = subrubric)) +
+  geom_point() +
+  geom_abline(intercept = intercept_hr03, slope = slope_hr03, color = "blue", size = 1.2, linetype = "solid") +
+  geom_abline(intercept = intercept_hr01, slope = slope_hr01, color = "red", size = 1.2, linetype = "solid") +
+  labs(title = "Regression of Subrubric HR03 and HR01 Counts Over Time",
+       x = "Date",
+       y = "Count",
+       color = "Subrubric") +
+  scale_color_manual(values = c("HR03" = "blue", "HR01" = "red")) +
+  theme_minimal()
+
 ```
 
 ```{r warning=FALSE}
@@ -341,64 +620,69 @@ combined_plot <- plot_hr03 + plot_hr01 + plot_layout(ncol = 1, heights = c(1, 1)
 # Print the combined plot
 print(combined_plot)
 ```
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(patchwork)
 
-
-```{r warning=FALSE}
-
-# Decompose HR01 time series
-ts_hr01 <- ts(hr01_counts$count, frequency = 12)
-decomp_hr01 <- stl(ts_hr01, s.window = "periodic")
-plot(decomp_hr01)
-
-# Decompose HR03 time series
-ts_hr03 <- ts(hr03_counts$count, frequency = 12)
-decomp_hr03 <- stl(ts_hr03, s.window = "periodic")
-plot(decomp_hr03)
-```
-
-```{r warning=FALSE}
+# Convert the date column to Date type
+shab_data$date <- as.Date(shab_data$date)
 
 # Extract month and year from the date
-shab_data$month <- as.numeric(format(shab_data$date, "%m"))
-shab_data$year <- as.numeric(format(shab_data$date, "%Y"))
+shab_data$month <- format(shab_data$date, "%m")
+shab_data$year <- format(shab_data$date, "%Y")
+
+# Group years into the desired pairs
+shab_data$year_group <- case_when(
+  shab_data$year %in% c("2018", "2019") ~ "2018-2019",
+  shab_data$year %in% c("2020", "2021") ~ "2020-2021",
+  shab_data$year %in% c("2022", "2023") ~ "2022-2023",
+  shab_data$year == "2024" ~ "2024",
+  TRUE ~ NA_character_
+)
 
 # Process HR03 data
-hr03_data <- subset(shab_data, subrubric == "HR03")
-hr03_counts <- hr03_data %>%
-  group_by(year, month) %>%
-  summarise(count = n(), .groups = 'drop')
+hr03_data <- subset(shab_data, subrubric == "HR03" & !is.na(year_group))
+hr03_means <- hr03_data %>%
+  group_by(year_group, month) %>%
+  summarise(mean_count = mean(n()), .groups = 'drop')
 
 # Process HR01 data
-hr01_data <- subset(shab_data, subrubric == "HR01")
-hr01_counts <- hr01_data %>%
-  group_by(year, month) %>%
-  summarise(count = n(), .groups = 'drop')
+hr01_data <- subset(shab_data, subrubric == "HR01" & !is.na(year_group))
+hr01_means <- hr01_data %>%
+  group_by(year_group, month) %>%
+  summarise(mean_count = mean(n()), .groups = 'drop')
 
-# Plot HR03 counts over months with non-linear regression line
-plot_hr03 <- ggplot(hr03_counts, aes(x = month, y = count)) +
-  geom_point() +
-  geom_smooth(method = "loess", se = TRUE, color = "blue") +
-  labs(title = "Monthly HR03 Counts",
+# Create the HR03 plot with adjusted line sizes
+plot_hr03 <- ggplot(hr03_means, aes(x = month, y = mean_count, group = year_group, color = year_group)) +
+  geom_line(size = 1) +
+  labs(title = "Monthly HR03 Mean Counts by Year Groups",
        x = "Month",
-       y = "HR03 Count") +
-  theme_minimal() +
-  scale_x_continuous(breaks = 1:12, labels = month.abb)
+       y = "Mean Count",
+       color = "Year Group") +
+  scale_x_discrete(limits = sprintf("%02d", 1:12)) +
+  theme_minimal()
 
-# Plot HR01 counts over months with non-linear regression line
-plot_hr01 <- ggplot(hr01_counts, aes(x = month, y = count)) +
-  geom_point() +
-  geom_smooth(method = "loess", se = TRUE, color = "blue") +
-  labs(title = "Monthly HR01 Counts",
+# Create the HR01 plot with adjusted line sizes
+plot_hr01 <- ggplot(hr01_means, aes(x = month, y = mean_count, group = year_group, color = year_group)) +
+  geom_line(size = 1) +
+  labs(title = "Monthly HR01 Mean Counts by Year Groups",
        x = "Month",
-       y = "HR01 Count") +
-  theme_minimal() +
-  scale_x_continuous(breaks = 1:12, labels = month.abb)
+       y = "Mean Count",
+       color = "Year Group") +
+  scale_x_discrete(limits = sprintf("%02d", 1:12)) +
+  theme_minimal()
 
 # Combine the plots using patchwork
-combined_plot <- plot_hr03 + plot_hr01 + plot_layout(ncol = 1, heights = c(1, 1))
+combined_plot <- plot_hr03 / plot_hr01 + plot_layout(ncol = 1, heights = c(1, 1))
 
 # Print the combined plot
 print(combined_plot)
+
+```
+
+
 ```
 
 
