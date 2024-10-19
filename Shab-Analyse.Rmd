@@ -68,22 +68,19 @@ from_date <- as.Date("2018-03-18")
 to_date <- as.Date("2024-08-25")
 shab_data <- Get_Shab_DF_from_range(from_date, to_date)
 
-# Display the data
 skim(shab_data)
 ```
 ```{r}
 head(shab_data)
 ```
-```{r Monthly_SubRubric_count}
+```{r Nettozuwachs_Periode}
 data <- shab_data
-
 
 # Convert 'date' column to Date type and extract month and quarter
 data$date <- as.Date(data$date)
 data$month <- format(data$date, "%Y-%m")
 data$quarter_label <- paste0(year(data$date), "_Q", quarter(data$date))
 
-# Aggregate data by month and subrubric
 agg_data <- data %>%
   group_by(month, subrubric) %>%
   summarise(count = n(), .groups = "drop")
@@ -120,7 +117,10 @@ p <- ggplot(final_data, aes(x = month)) +
   geom_hline(yintercept = 0, color = "black") +
   scale_y_continuous(labels = abs) +
   scale_x_discrete(labels = final_data$quarter_label) +
-  scale_fill_manual(values = c("HR01" = "Darkgreen", "HR03" = "#FF474C", "Netto Zuwachs" = "gray50")) +
+  scale_fill_manual(
+    values = c("HR01" = "Darkgreen", "HR03" = "#FF474C", "Netto Zuwachs" = "gray50"),
+    labels = c("HR01" = "Neueintragung", "HR03" = "Löschung", "Netto Zuwachs" = "Netto Zuwachs")
+    ) +
   labs(
     title = "Monthly Subrubric Counts with Netto Zuwachs",
     x = "Month",
@@ -137,7 +137,7 @@ p <- ggplot(final_data, aes(x = month)) +
 # Add Netto Zuwachs as a separate bar without stacking
 p + geom_col(data = final_data, aes(x = month, y = NettoZuwachs, fill = "Netto Zuwachs"), width = 0.3, color = "black", position = position_dodge(width = 0.9))
 ```
-```{r}
+```{r Nettozuwachs_Kanton}
 
 
 # Group the data by Kanton and subrubric, then aggregate
@@ -173,9 +173,12 @@ p <- ggplot(final_data_kanton, aes(x = kanton)) +
   geom_col(aes(y = count, fill = subrubric), position = "stack") +
   geom_hline(yintercept = 0, color = "black") +
   scale_y_continuous(labels = abs) +
-  scale_fill_manual(values = c("HR01" = "#1f77b4", "HR03" = "#ff7f0e", "Netto Zuwachs" = "gray50")) +
+  scale_fill_manual(
+    values = c("HR01" = "Darkgreen", "HR03" = "#FF474C", "Netto Zuwachs" = "gray50"),
+    labels = c("HR01" = "Neueintragung", "HR03" = "Löschung", "Netto Zuwachs" = "Netto Zuwachs")
+    ) +
   labs(
-    title = "Kanton-wise Subrubric Counts Ordered by Netto Zuwachs",
+    title = "Kantonale Zählung von Neueintragungen und Löschungen, sortiert nach Netto Zuwachs",
     x = "Kanton",
     y = "Number of Records",
     fill = "Subrubric"
@@ -190,7 +193,7 @@ p <- ggplot(final_data_kanton, aes(x = kanton)) +
 # Add Netto Zuwachs as a separate bar without stacking
 p + geom_col(data = final_data_kanton, aes(x = kanton, y = NettoZuwachs, fill = "Netto Zuwachs"), width = 0.3, color = "black", position = position_dodge(width = 0.9))
 ```
-```{r}
+```{r Prozentuale_Verteilung}
 # Calculate relative contributions of HR01 and HR03
 relative_contribution <- complete_data_kanton %>%
   group_by(kanton, subrubric) %>%
@@ -207,65 +210,15 @@ ordered_kantons <- relative_contribution %>%
 relative_contribution <- relative_contribution %>%
   mutate(kanton = factor(kanton, levels = ordered_kantons))
 
-# Plot relative contributions by Kanton
-ggplot(relative_contribution, aes(x = kanton, y = percentage, fill = subrubric)) +
-  geom_bar(stat = "identity") +
-  coord_flip() +  # Flip coordinates for better readability
-  labs(
-    title = "Relative Contribution of HR01 and HR03 by Kanton",
-    x = "Kanton",
-    y = "Percentage",
-    fill = "Subrubric"
-  ) +
-  theme_minimal() +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1)
-  )
-
-```
-
-```{r}
-dp <- 5
+dp <- 1
 relative_contribution2 <- relative_contribution %>%
   arrange(kanton, subrubric) %>%
   group_by(kanton) %>%
   mutate(y_text = percentage[2] + c(1, -1) * dp)
-```
 
-
-```{r}
-# Plot with y-axis range limitation and visible labels
-ggplot(relative_contribution, aes(x = kanton, y = percentage, fill = subrubric)) +
-  geom_bar(stat = "identity", color = "black") +  # Keep bar borders
-  coord_flip() +  # Flip coordinates for better readability
-  coord_cartesian(ylim = c(30, 50)) +  # Set y-axis range to zoom in
-  geom_text(
-    aes(label = round(percentage, 1)), 
-    position = position_stack(vjust = 0.5), 
-    size = 3, 
-    color = "black"  # Choose a color that contrasts with the bar color
-  ) +  
-  labs(
-    title = "Relative Contribution of HR01 and HR03 by Kanton",
-    x = "Kanton",
-    y = "Percentage",
-    fill = "Subrubric"
-  ) +
-  theme_minimal() +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1)
-  )
-
-
-```
-
-
-```{r}
-# Plot with separate label positions for HR01 and HR03
 ggplot(relative_contribution2, aes(x = kanton, y = percentage, fill = subrubric)) +
-  geom_col(color = "black") +  # Keep bar borders
-  #coord_flip() +  # Flip coordinates for better readability
-  coord_cartesian(ylim = c(30, 50)) +  # Set y-axis range to zoom in
+  geom_col(color = "black") +  
+  coord_cartesian(ylim = c(30, 50)) + 
   
   # Labels for HR01 at the bottom of the bars
   geom_text(
@@ -275,11 +228,15 @@ ggplot(relative_contribution2, aes(x = kanton, y = percentage, fill = subrubric)
   ) +
 
   labs(
-    title = "Relative Contribution of HR01 and HR03 by Kanton",
+    title = "Prozentuale Verteilung von Neueintragung und Löschungen nach Kanton",
     x = "Kanton",
-    y = "Percentage",
+    y = "Prozent",
     fill = "Subrubric"
   ) +
+  scale_fill_manual(
+    values = c("HR01" = "Darkgreen", "HR03" = "#FF474C"),
+    labels = c("HR01" = "Neueintragung", "HR03" = "Löschung")
+    ) +
   theme_minimal() +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1)
@@ -288,14 +245,7 @@ ggplot(relative_contribution2, aes(x = kanton, y = percentage, fill = subrubric)
 
 ```
 
-```{r,fig.width=10, fig.height=10, echo=FALSE}
-# Load necessary libraries
-library(ggplot2)
-library(dplyr)
-library(patchwork)  # For combining plots into a grid
-
-# Ensure that the date is in Date format and extract the year
-data$date <- as.Date(data$date)
+```{r,fig.width=10, fig.height=10, echo=TRUE}
 data$year <- format(data$date, "%Y")
 
 # Aggregate the data by year, kanton, and subrubric, then calculate percentages
@@ -309,9 +259,13 @@ agg_data <- data %>%
 overview_plot <- ggplot(agg_data, aes(x = kanton, y = percentage, fill = subrubric)) +
   geom_bar(stat = "identity", width = 0.8) +
   labs(
-    title = "Overall Contribution of HR01 and HR03 by Kanton",
+    title = "Anzahl Gründungen und Löschungen über die ganze Periode pro Kanton",
     fill = "Subrubric"
   ) +
+  scale_fill_manual(
+    values = c("HR01" = "Darkgreen", "HR03" = "#FF474C"),
+    labels = c("HR01" = "Neueintragung", "HR03" = "Löschung")
+    ) +
   theme_minimal() +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
@@ -345,7 +299,7 @@ for (yr in unique(agg_data$year)) {
   p <- ggplot(year_data, aes(x = kanton, y = percentage, fill = subrubric)) +
     geom_bar(stat = "identity", width = 0.8) +
     labs(
-      title = paste(yr)
+      title = paste('Anzahl Gründungen und Löschungen ', yr)
     ) +
     theme_minimal() +
     theme(
@@ -356,6 +310,11 @@ for (yr in unique(agg_data$year)) {
       axis.title.y = element_blank(),  # Remove y-axis title
       legend.position = "none"  # Remove legend from individual plots
     ) +
+  
+  scale_fill_manual(
+    values = c("HR01" = "Darkgreen", "HR03" = "#FF474C"),
+    labels = c("HR01" = "Neueintragung", "HR03" = "Löschung")
+    ) +
     coord_cartesian(ylim = c(30, 55))  # Adjust the y-axis limits with coord_cartesian
   
   # Store the plot in the list
@@ -364,8 +323,7 @@ for (yr in unique(agg_data$year)) {
 
 # Combine the overview plot with the individual year plots using patchwork
 final_plot <- (overview_plot / wrap_plots(plots, ncol = 2)) + 
-  plot_layout(heights = c(2, 10)) +  # Adjust the heights for overview and year plots
-  plot_annotation(title = "Relative Contribution of HR01 and HR03 by Year and Kanton")
+  plot_layout(heights = c(2, 10))
 
 # Display the combined plot grid
 final_plot
@@ -407,35 +365,75 @@ max_difference <- max(abs(monthly_counts$difference))
 scale_factor <- max_count / max_difference
 monthly_counts$scaled_difference <- monthly_counts$difference * scale_factor
 
-# Create the plot with a secondary y-axis
+# Define the COVID period
+covid_start <- as.Date("2020-03-01")
+covid_end <- as.Date("2021-06-01")
+covid_middle <- as.Date("2020-07-01")  # Mid-point of the COVID period for text placement
+
+# Create the plot with the orange background for the COVID period and a "Covid" annotation
 ggplot(monthly_counts, aes(x = as.Date(paste0(year_month, "-01")))) +
-  geom_line(aes(y = HR01_count, color = "HR01 Count")) +
-  geom_line(aes(y = HR03_count, color = "HR03 Count")) +
-  geom_line(aes(y = scaled_difference, color = "Difference")) +
-  scale_y_continuous(
-    name = "Count",
-    sec.axis = sec_axis(~ . / scale_factor, name = "Difference")
+  geom_rect(
+    aes(xmin = covid_start, xmax = covid_end, ymin = -Inf, ymax = Inf),
+    fill = "orange", alpha = 0.01
+  ) +  
+  geom_line(aes(y = HR01_count, color = "HR01 Count"), size = 1.2) +  # Line for Neueintragung
+  geom_line(aes(y = HR03_count, color = "HR03 Count"), size = 1.2) +  # Line for Löschung
+  geom_line(aes(y = scaled_difference, color = "Difference"), size = 1.2) +  # Line for Netto Zuwachs
+  scale_y_continuous(name = "Count") +  # Single y-axis for all lines
+  scale_color_manual(
+    values = c("HR01 Count" = "Darkgreen", "HR03 Count" = "#FF474C", "Difference" = "gray50"),
+    labels = c("HR01 Count" = "Neueintragung", "HR03 Count" = "Löschung", "Difference" = "Unterschied")
   ) +
-  labs(title = "Monthly Counts and Differences",
-       x = "Month",
-       color = "Legend") +
+  labs(
+    title = "Monatliche Eintragungen, Löschungen und Unterschied",
+    x = "Month",
+    color = NULL  
+  ) +
+  annotate("text", x = covid_middle, y = Inf, label = "Covid", vjust = 2, size = 5, color = "black") +  # Text annotation
   theme_minimal() +
   theme(legend.position = "bottom")
 
+
+
 ```
 ```{r}
+# Determine the first and last full months
+first_full_month <- floor_date(min(shab_data$date), "month")
+last_full_month <- floor_date(max(shab_data$date), "month") - months(1)
+
+# Check if the first month has a partial entry (data does not start on the 1st day)
+first_data_date <- min(shab_data$date)
+if (day(first_data_date) != 1) {
+  # Move the start to the first day of the next month if the first month is partial
+  first_full_month <- floor_date(first_data_date + months(1), "month")
+}
+
+# Filter the data to include only full months
+shab_data_filtered <- shab_data %>%
+  filter(date >= first_full_month & date <= last_full_month)
+
 # Create a quarter-year column
-shab_data$quarter_year <- floor_date(shab_data$date, "quarter")
-# Summarize the data for line plot
-shab_data_summary <- shab_data %>%
+shab_data_filtered$quarter_year <- floor_date(shab_data_filtered$date, "quarter")
+
+# Summarize the data for the line plot
+shab_data_summary <- shab_data_filtered %>%
   group_by(quarter_year, kanton, subrubric) %>%
-  summarise(entries = n()) %>%
-  ungroup()
+  summarise(entries = n(), .groups = "drop")
+
 # Line Plot: Number of entries over time by subrubric, faceted by kanton
 ggplot(shab_data_summary, aes(x = quarter_year, y = entries, color = subrubric)) +
   geom_line() +
+  geom_rect(
+    aes(xmin = covid_start, xmax = covid_end, ymin = -Inf, ymax = Inf),
+    fill = "orange", alpha = 0.01, color = NA 
+  ) +  
   labs(title = "Number of Entries Over Time by Subrubric and Kanton", x = "Quarter-Year", y = "Number of Entries") +
   facet_wrap(~ kanton, scales = "free_y") +
+    scale_color_manual(
+    values = c("HR01" = "Darkgreen", "HR03" = "#FF474C"),
+    labels = c("HR01" = "Neueintragung", "HR03" = "Löschung")
+  ) +
+
   theme_minimal() +
   theme(legend.position = "bottom",
         plot.title = element_text(size = 14),
@@ -444,6 +442,8 @@ ggplot(shab_data_summary, aes(x = quarter_year, y = entries, color = subrubric))
         strip.text = element_text(size = 8),
         legend.text = element_text(size = 8),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+
 ```
 
 ```{r warning=FALSE}
@@ -554,13 +554,16 @@ slope_hr01 <- coef(fit_hr01)[2]
 # Plot both subrubrics in the same plot with thicker regression lines
 ggplot(count_per_date, aes(x = date, y = count, color = subrubric)) +
   geom_point() +
-  geom_abline(intercept = intercept_hr03, slope = slope_hr03, color = "blue", size = 1.2, linetype = "solid") +
-  geom_abline(intercept = intercept_hr01, slope = slope_hr01, color = "red", size = 1.2, linetype = "solid") +
+  geom_abline(intercept = intercept_hr03, slope = slope_hr03, color = '#FF474C', size = 1.2, linetype = "solid") +
+  geom_abline(intercept = intercept_hr01, slope = slope_hr01, color = "Darkgreen", size = 1.2, linetype = "solid") +
   labs(title = "Regression of Subrubric HR03 and HR01 Counts Over Time",
        x = "Date",
        y = "Count",
        color = "Subrubric") +
-  scale_color_manual(values = c("HR03" = "blue", "HR01" = "red")) +
+    scale_color_manual(
+    values = c("HR01" = "Darkgreen", "HR03" = "#FF474C"),
+    labels = c("HR01" = "Neueintragung", "HR03" = "Löschung")
+  ) +
   theme_minimal()
 
 ```
@@ -621,10 +624,6 @@ combined_plot <- plot_hr03 + plot_hr01 + plot_layout(ncol = 1, heights = c(1, 1)
 print(combined_plot)
 ```
 ```{r}
-# Load necessary libraries
-library(ggplot2)
-library(dplyr)
-library(patchwork)
 
 # Convert the date column to Date type
 shab_data$date <- as.Date(shab_data$date)
