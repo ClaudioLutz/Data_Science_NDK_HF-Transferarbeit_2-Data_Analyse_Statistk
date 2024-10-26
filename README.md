@@ -36,9 +36,9 @@ To execute the analysis:
    - **Note**: This data download, processing, and saving to an RDS file may take one to two hours, depending on the amount of data and network speed.
 
 ### Step 3: Render Output
-Once all chunks have successfully executed, knit the document to HTML by clicking **Knit** in RStudio, or run the following in the R console:
+First execute all chunks, then knit the document to HTML by clicking **Knit** in RStudio, or run the following in the R console:
 
-The output will include a table of contents (Inhaltsverzeichnis) and visualizations of SHAB registration trends.
+The output will include visualizations of SHAB registration trends.
 
 ## License
 This project is licensed under the MIT License.
