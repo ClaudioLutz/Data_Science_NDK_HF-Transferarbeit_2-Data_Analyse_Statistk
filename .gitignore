@@ -48,4 +48,4 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 shab_data/
-SaveData/
+SaveData/*.tex
