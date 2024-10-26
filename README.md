@@ -38,15 +38,7 @@ To execute the analysis:
 ### Step 3: Render Output
 Once all chunks have successfully executed, knit the document to HTML by clicking **Knit** in RStudio, or run the following in the R console:
 
-```r
-rmarkdown::render("Shab-Analyse.Rmd", output_format = "html_document")
-```
-
 The output will include a table of contents (Inhaltsverzeichnis) and visualizations of SHAB registration trends.
-
-### Additional Notes
-- **Troubleshooting**: If errors occur during data loading, ensure all dependencies are correctly installed, and re-run any interrupted chunks.
-- **Customization**: Adjust the `toc_depth` setting in the YAML header to control how many heading levels are shown in the Inhaltsverzeichnis.
 
 ## License
 This project is licensed under the MIT License.

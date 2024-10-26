@@ -74,66 +74,62 @@ Get_Shab_DF <- function(download_date) {
   return(df)
 }
 
-# Function to get data for a range of dates
 Get_Shab_DF_from_range <- function(from_date, to_date) {
   df_Result <- NULL
   main_pickle <- './shab_data/last_df.RDS'
   
   if (file.exists(main_pickle)) {
+    # Load existing data
     df_Result <- readRDS(main_pickle)
-    if (!'date' %in% names(df_Result)) {
-      df_Result$date <- as.Date(NA)
-    } else {
-      df_Result$date <- as.Date(df_Result$date)
-    }
+    df_Result$date <- as.Date(df_Result$date, format = "%Y-%m-%d")  # Ensure Date type
     
-    if (min(df_Result$date, na.rm = TRUE) <= (from_date + 3) && max(df_Result$date, na.rm = TRUE) >= (to_date - 3)) {
+    # Check if data range is fully covered
+    max_date <- max(df_Result$date, na.rm = TRUE)
+    min_date <- min(df_Result$date, na.rm = TRUE)
+    
+    if (min_date <= from_date && max_date >= to_date) {
+      # Data is already up-to-date within the range
       df_Result <- df_Result %>% filter(date >= from_date & date <= to_date)
       return(df_Result)
     }
     
-    if (min(df_Result$date, na.rm = TRUE) > (from_date + 3)) {
-      for (date in seq(from_date, min(df_Result$date, na.rm = TRUE) - 1, by = "day")) {
+    # Download data for dates before existing range
+    if (min_date > from_date) {
+      for (date in seq(from_date, min_date - 1, by = "day")) {
         df <- Get_Shab_DF(date)
-        if (!'date' %in% names(df)) {
-          df$date <- as.Date(NA)
-        } else {
-          df$date <- as.Date(df$date)
-        }
+        df$date <- as.Date(df$date, format = "%Y-%m-%d")  # Ensure Date type
         df_Result <- bind_rows(df_Result, df)
       }
-      saveRDS(df_Result, main_pickle)
-      return(df_Result)
     }
     
-    if (max(df_Result$date, na.rm = TRUE) < (to_date - 3)) {
-      for (date in seq(max(df_Result$date, na.rm = TRUE) + 1, to_date, by = "day")) {
+    # Download data for dates after existing range
+    if (max_date < to_date) {
+      for (date in seq(max_date + 1, to_date, by = "day")) {
         df <- Get_Shab_DF(date)
-        if (!'date' %in% names(df)) {
-          df$date <- as.Date(NA)
-        } else {
-          df$date <- as.Date(df$date)
-        }
+        df$date <- as.Date(df$date, format = "%Y-%m-%d")  # Ensure Date type
         df_Result <- bind_rows(df_Result, df)
       }
-      saveRDS(df_Result, main_pickle)
-      return(df_Result)
     }
+    
+    # Save updated data
+    saveRDS(df_Result, main_pickle)
+    return(df_Result)
+    
   } else {
+    # If no existing data, download full range
     for (date in seq(from_date, to_date, by = "day")) {
       df <- Get_Shab_DF(date)
-      if (!'date' %in% names(df)) {
-        df$date <- as.Date(NA)
-      } else {
-        df$date <- as.Date(df$date)
-      }
+      df$date <- as.Date(df$date, format = "%Y-%m-%d")  # Ensure Date type
       if (is.null(df_Result)) {
         df_Result <- df
       } else {
         df_Result <- bind_rows(df_Result, df)
       }
     }
+    # Save the full range data
     saveRDS(df_Result, main_pickle)
     return(df_Result)
   }
 }
+
+
