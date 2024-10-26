@@ -10,11 +10,11 @@ output:
 
 ## Einführung
 
-### HR01
+## HR01
 
 Dieser Code wird für die Registrierung neuer Unternehmen im Handelsregister verwendet. Wenn ein neues Unternehmen gegründet und registriert wird, erfolgt die Veröffentlichung unter HR01. Dies umfasst Details wie den Firmennamen, den Sitz, den Zweck und die Namen der Verwaltungsratsmitglieder oder Geschäftsführer.
 
-### HR03
+## HR03
 
 Dieser Code bezieht sich auf die Löschung eines Unternehmens aus dem Handelsregister. Dies geschieht, wenn ein Unternehmen aufgelöst, liquidiert oder anderweitig nicht mehr als registrierte Einheit existiert. Die Löschung muss beantragt werden, wenn beispielsweise ein Einzelunternehmen nicht mehr existiert oder an eine andere Person übergeht.
 
@@ -24,7 +24,7 @@ Weitere Informationen zu den Eintragungspflichten und -verfahren befinden sich a
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, fig.width=10, fig.height=6)
+knitr::opts_chunk$set(echo = TRUE, fig.width=10)
 ```
 
 ```{r installiere_libraries, echo=TRUE, results='hide', message=FALSE, warning=FALSE}
@@ -63,56 +63,133 @@ source("get_shab_data.R")
 
 
 ```{r lade_daten_falls_nötig, warning=FALSE}
-# Scrape alle relevanten Shab-Daten über einen Zeitraum. Es werden nur die Daten herunterladen welche noch nicht lokal gespeichert sind.
+# Scrape alle relevanten Shab-Daten über einen Zeitraum. Es werden nur die Daten heruntergeladen welche noch nicht lokal gespeichert sind.
 from_date <- as.Date("2018-03-18")
-to_date <- as.Date("2024-08-25")
+to_date <- as.Date("2024-10-20")
 shab_data <- Get_Shab_DF_from_range(from_date, to_date)
 
 skim(shab_data)
 ```
-```{r}
-head(shab_data)
+```{r filter_dataset}
+first_full_month <- floor_date(min(shab_data$date), "month")
+last_full_month <- floor_date(max(shab_data$date), "month") - months(1)
+
+first_data_date <- min(shab_data$date)
+if (day(first_data_date) != 1) {
+  first_full_month <- floor_date(first_data_date + months(1), "month")
+}
+
+data <- shab_data %>%
+  filter(date >= first_full_month & date <= last_full_month)
 ```
-```{r Nettozuwachs_Periode}
-data <- shab_data
 
-# Convert 'date' column to Date type and extract month and quarter
+
+
+```{r}
+# Alle benötigten Datumsspalten
 data$date <- as.Date(data$date)
-data$month <- format(data$date, "%Y-%m")
+data$month <- format(data$date, "%m")
 data$quarter_label <- paste0(year(data$date), "_Q", quarter(data$date))
+data$year <- format(data$date, "%Y")
+data$quarter_year <- floor_date(data$date, "quarter")
+data$year_month <- format(data$date, "%Y-%m")
 
+# Date Varbiablen
+current_year <- format(Sys.Date(), "%Y")
+covid_start <- as.Date("2020-03-01")
+covid_end <- as.Date("2021-06-01")
+covid_middle <- as.Date("2020-07-01") 
+
+```
+
+# Zuwachs an Firmen
+Aufgrund der höheren Anzahl Eintragungen gegenüber Löschungen nimmt die Anzahl eingetragenen Firmen zu.
+
+```{r Zunahme_an_Firmen}
+
+hr01_data <- subset(data, subrubric == "HR01")
+hr03_data <- subset(data, subrubric == "HR03")
+
+hr01_counts <- aggregate(id ~ year_month, data = hr01_data, FUN = length)
+hr03_counts <- aggregate(id ~ year_month, data = hr03_data, FUN = length)
+
+# Rename columns for merging
+colnames(hr01_counts) <- c("year_month", "HR01_count")
+colnames(hr03_counts) <- c("year_month", "HR03_count")
+
+# Merge the data on year_month
+monthly_counts <- merge(hr01_counts, hr03_counts, by = "year_month", all = TRUE)
+monthly_counts[is.na(monthly_counts)] <- 0
+
+# Calculate the difference
+monthly_counts$difference <- monthly_counts$HR01_count - monthly_counts$HR03_count
+
+# Calculate the net change for each month
+monthly_counts$net_change <- monthly_counts$HR01_count - monthly_counts$HR03_count
+
+# Calculate the cumulative sum of the net changes
+monthly_counts$cumulative_total <- cumsum(monthly_counts$net_change)
+
+# Create the cumulative total plot
+plot_cumulative <- ggplot(monthly_counts, aes(x = as.Date(paste0(year_month, "-01")))) +
+  geom_line(aes(y = cumulative_total, color = "Cumulative Total")) +
+  labs(title = "Cumulatives Total auf Zeit",
+       x = "Monat",
+       y = "Cumulatives Total",
+       color = "Legend") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Create the log scale plot without the legend
+plot_log_scale <- ggplot(monthly_counts, aes(x = as.Date(paste0(year_month, "-01")))) +
+  geom_line(aes(y = cumulative_total, color = "Cumulative Total")) +
+  scale_y_log10() +
+  labs(title = "Cumulatives Total auf Zeit (Log Scale)",
+       x = "Monat",
+       y = "Cumulatives Total (Log Scale)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Combine the two plots using patchwork
+combined_plot <- plot_cumulative + plot_log_scale + plot_layout(ncol = 2)
+
+# Print the combined plot
+print(combined_plot)
+```
+
+```{r Nettozuwachs_pro_Monat}
 agg_data <- data %>%
-  group_by(month, subrubric) %>%
+  group_by(year_month, subrubric) %>%
   summarise(count = n(), .groups = "drop")
 
 # Ensure all months have both subrubrics (HR01 and HR03)
-all_months <- unique(agg_data$month)
+all_months <- unique(agg_data$year_month)
 all_subrubrics <- c("HR01", "HR03")
-complete_data <- expand.grid(month = all_months, subrubric = all_subrubrics) %>%
-  left_join(agg_data, by = c("month", "subrubric")) %>%
+complete_data <- expand.grid(year_month = all_months, subrubric = all_subrubrics) %>%
+  left_join(agg_data, by = c("year_month", "subrubric")) %>%
   mutate(count = ifelse(is.na(count), 0, count))
 
 # Generate the sequence of months that are the start of each quarter
-start_of_quarters <- unique(complete_data$month[month(as.Date(paste0(complete_data$month, "-01"))) %% 3 == 1])
+start_of_quarters <- unique(complete_data$year_month[month(as.Date(paste0(complete_data$year_month, "-01"))) %% 3 == 1])
 
 # Calculate the difference between HR01 and HR03 as Netto Zuwachs
 difference_data <- complete_data %>%
   spread(key = subrubric, value = count) %>%
   mutate(NettoZuwachs = HR01 - abs(HR03)) %>%
-  select(month, NettoZuwachs)
+  select(year_month, NettoZuwachs)
 
 # Merge the difference data back with the complete_data
 final_data <- complete_data %>%
-  left_join(difference_data, by = "month") %>%
-  mutate(quarter_label = ifelse(month %in% start_of_quarters, paste0(substr(month, 1, 4), "_Q", quarter(as.Date(paste0(month, "-01")))), ""),
-         month = factor(month, levels = unique(month)))  # Convert month to a factor
+  left_join(difference_data, by = "year_month") %>%
+    mutate(quarter_label = ifelse(year_month %in% start_of_quarters, paste0(substr(year_month, 1, 4), "_Q", quarter(as.Date(paste0(year_month, "-01")))), ""),
+         year_month = factor(year_month, levels = unique(year_month)))  # Convert month to a factor
 
 # Transform counts: HR03 to negative values
 final_data <- final_data %>%
   mutate(count = ifelse(subrubric == "HR03", -count, count))
 
 # Plot HR01 and HR03 with stacking
-p <- ggplot(final_data, aes(x = month)) +
+p <- ggplot(final_data, aes(x = year_month)) +
   geom_col(aes(y = count, fill = subrubric), position = "stack") +
   geom_hline(yintercept = 0, color = "black") +
   scale_y_continuous(labels = abs) +
@@ -122,10 +199,10 @@ p <- ggplot(final_data, aes(x = month)) +
     labels = c("HR01" = "Neueintragung", "HR03" = "Löschung", "Netto Zuwachs" = "Netto Zuwachs")
     ) +
   labs(
-    title = "Monthly Subrubric Counts with Netto Zuwachs",
-    x = "Month",
-    y = "Number of Records",
-    fill = "Subrubric"
+    title = "Anzahl Neueintragungen, Anzahl Löschungen und Nettozuwachs",
+    x = "Monat",
+    y = "Anzahl",
+    fill = NULL
   ) +
   theme_minimal() +
   theme(
@@ -135,11 +212,10 @@ p <- ggplot(final_data, aes(x = month)) +
   )
 
 # Add Netto Zuwachs as a separate bar without stacking
-p + geom_col(data = final_data, aes(x = month, y = NettoZuwachs, fill = "Netto Zuwachs"), width = 0.3, color = "black", position = position_dodge(width = 0.9))
+p + geom_col(data = final_data, aes(x = year_month, y = NettoZuwachs, fill = "Netto Zuwachs"), width = 0.3, color = "black", position = position_dodge(width = 0.9))
 ```
-```{r Nettozuwachs_Kanton}
 
-
+```{r Nettozuwachs_nach_Kanton}
 # Group the data by Kanton and subrubric, then aggregate
 agg_data_kanton <- data %>%
   group_by(kanton, subrubric) %>%
@@ -246,8 +322,6 @@ ggplot(relative_contribution2, aes(x = kanton, y = percentage, fill = subrubric)
 ```
 
 ```{r,fig.width=10, fig.height=10, echo=TRUE}
-data$year <- format(data$date, "%Y")
-
 # Aggregate the data by year, kanton, and subrubric, then calculate percentages
 agg_data <- data %>%
   group_by(year, kanton, subrubric) %>%
@@ -329,46 +403,11 @@ final_plot <- (overview_plot / wrap_plots(plots, ncol = 2)) +
 final_plot
 
 
-
 ```
 
 ```{r warning=FALSE}
-
-# Convert the date column to Date type
-shab_data$date <- as.Date(shab_data$date)
-
-# Extract year and month from the date
-shab_data$year_month <- format(shab_data$date, "%Y-%m")
-
-# Filter data for subrubric HR01 and HR03
-hr01_data <- subset(shab_data, subrubric == "HR01")
-hr03_data <- subset(shab_data, subrubric == "HR03")
-
-# Count occurrences by year_month
-hr01_counts <- aggregate(id ~ year_month, data = hr01_data, FUN = length)
-hr03_counts <- aggregate(id ~ year_month, data = hr03_data, FUN = length)
-
-# Rename columns for merging
-colnames(hr01_counts) <- c("year_month", "HR01_count")
-colnames(hr03_counts) <- c("year_month", "HR03_count")
-
-# Merge the data on year_month
-monthly_counts <- merge(hr01_counts, hr03_counts, by = "year_month", all = TRUE)
-monthly_counts[is.na(monthly_counts)] <- 0
-
-# Calculate the difference
+# Remove scaling part if you want to display the raw difference
 monthly_counts$difference <- monthly_counts$HR01_count - monthly_counts$HR03_count
-
-# Normalize the difference for plotting
-max_count <- max(monthly_counts$HR01_count, monthly_counts$HR03_count)
-max_difference <- max(abs(monthly_counts$difference))
-scale_factor <- max_count / max_difference
-monthly_counts$scaled_difference <- monthly_counts$difference * scale_factor
-
-# Define the COVID period
-covid_start <- as.Date("2020-03-01")
-covid_end <- as.Date("2021-06-01")
-covid_middle <- as.Date("2020-07-01")  # Mid-point of the COVID period for text placement
 
 # Create the plot with the orange background for the COVID period and a "Covid" annotation
 ggplot(monthly_counts, aes(x = as.Date(paste0(year_month, "-01")))) +
@@ -378,7 +417,7 @@ ggplot(monthly_counts, aes(x = as.Date(paste0(year_month, "-01")))) +
   ) +  
   geom_line(aes(y = HR01_count, color = "HR01 Count"), size = 1.2) +  # Line for Neueintragung
   geom_line(aes(y = HR03_count, color = "HR03 Count"), size = 1.2) +  # Line for Löschung
-  geom_line(aes(y = scaled_difference, color = "Difference"), size = 1.2) +  # Line for Netto Zuwachs
+  geom_line(aes(y = difference, color = "Difference"), size = 1.2) +  # Line for raw difference (HR01 - HR03)
   scale_y_continuous(name = "Count") +  # Single y-axis for all lines
   scale_color_manual(
     values = c("HR01 Count" = "Darkgreen", "HR03 Count" = "#FF474C", "Difference" = "gray50"),
@@ -386,48 +425,27 @@ ggplot(monthly_counts, aes(x = as.Date(paste0(year_month, "-01")))) +
   ) +
   labs(
     title = "Monatliche Eintragungen, Löschungen und Unterschied",
-    x = "Month",
+    x = "Monat",
     color = NULL  
   ) +
-  annotate("text", x = covid_middle, y = Inf, label = "Covid", vjust = 2, size = 5, color = "black") +  # Text annotation
+  annotate("text", x = covid_middle, y = Inf, label = "Covid", vjust = 2, size = 5, color = "black") + 
   theme_minimal() +
-  theme(legend.position = "bottom")
-
-
+  theme(legend.position = "bottom")  
 
 ```
 ```{r}
-# Determine the first and last full months
-first_full_month <- floor_date(min(shab_data$date), "month")
-last_full_month <- floor_date(max(shab_data$date), "month") - months(1)
 
-# Check if the first month has a partial entry (data does not start on the 1st day)
-first_data_date <- min(shab_data$date)
-if (day(first_data_date) != 1) {
-  # Move the start to the first day of the next month if the first month is partial
-  first_full_month <- floor_date(first_data_date + months(1), "month")
-}
-
-# Filter the data to include only full months
-shab_data_filtered <- shab_data %>%
-  filter(date >= first_full_month & date <= last_full_month)
-
-# Create a quarter-year column
-shab_data_filtered$quarter_year <- floor_date(shab_data_filtered$date, "quarter")
-
-# Summarize the data for the line plot
-shab_data_summary <- shab_data_filtered %>%
+data_summary <- data %>%
   group_by(quarter_year, kanton, subrubric) %>%
   summarise(entries = n(), .groups = "drop")
 
-# Line Plot: Number of entries over time by subrubric, faceted by kanton
-ggplot(shab_data_summary, aes(x = quarter_year, y = entries, color = subrubric)) +
+ggplot(data_summary, aes(x = quarter_year, y = entries, color = subrubric)) +
   geom_line() +
   geom_rect(
     aes(xmin = covid_start, xmax = covid_end, ymin = -Inf, ymax = Inf),
     fill = "orange", alpha = 0.01, color = NA 
   ) +  
-  labs(title = "Number of Entries Over Time by Subrubric and Kanton", x = "Quarter-Year", y = "Number of Entries") +
+  labs(title = "Anzahl Einträge und Löschunugen pro Kanton", x = NULL, y = "Number of Entries") +
   facet_wrap(~ kanton, scales = "free_y") +
     scale_color_manual(
     values = c("HR01" = "Darkgreen", "HR03" = "#FF474C"),
@@ -442,44 +460,106 @@ ggplot(shab_data_summary, aes(x = quarter_year, y = entries, color = subrubric))
         strip.text = element_text(size = 8),
         legend.text = element_text(size = 8),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-
 ```
 
-```{r warning=FALSE}
+```{r}
+monthly_counts_prop <- data %>%
+  group_by(year_month, subrubric) %>%
+  summarise(count = n(), .groups = 'drop') %>%
+  pivot_wider(names_from = subrubric, values_from = count, values_fill = 0)
 
+monthly_counts_prop <- monthly_counts_prop %>%
+  mutate(total = HR01 + HR03,
+         proportion = HR01 / total)
 
-# Calculate the net change for each month
-monthly_counts$net_change <- monthly_counts$HR01_count - monthly_counts$HR03_count
+alpha <- 0.05  # 95% confidence level
 
-# Calculate the cumulative sum of the net changes
-monthly_counts$cumulative_total <- cumsum(monthly_counts$net_change)
+calc_confidence_interval <- function(proportion, total) {
+  std_error <- sqrt((proportion * (1 - proportion)) / total)  
+  lower_bound <- qnorm(alpha / 2, mean = proportion, sd = std_error)
+  upper_bound <- qnorm(1 - alpha / 2, mean = proportion, sd = std_error)
+  return(c(lower_bound, upper_bound))
+}
 
-# Create the cumulative total plot
-plot_cumulative <- ggplot(monthly_counts, aes(x = as.Date(paste0(year_month, "-01")))) +
-  geom_line(aes(y = cumulative_total, color = "Cumulative Total")) +
-  labs(title = "Cumulative Total Over Time",
-       x = "Month",
-       y = "Cumulative Total",
-       color = "Legend") +
+monthly_counts_prop <- monthly_counts_prop %>%
+  rowwise() %>%
+  mutate(
+    lower_bound = calc_confidence_interval(proportion, total)[1],
+    upper_bound = calc_confidence_interval(proportion, total)[2]
+  )
+
+monthly_counts_prop$year_month_date <- as.Date(paste0(monthly_counts_prop$year_month, "-01"), format = "%Y-%m-%d")
+
+ggplot(monthly_counts_prop, aes(x = year_month_date, y = proportion)) +
+  geom_rect(
+    xmin = covid_start, xmax = covid_end, ymin = -Inf, ymax = Inf,
+    fill = "orange", alpha = 0.01
+  ) +  
+  geom_line(color = "blue", linewidth = 1) +  
+  geom_ribbon(aes(ymin = lower_bound, ymax = upper_bound), fill = "lightblue", alpha = 0.3) +  
+  labs(title = "Anteil der Neueintragungen im Zeitverlauf mit 95%-Konfidenzintervall",
+       x = "Monat", y = "Anteil") +
+  annotate("text", x = covid_middle, y = Inf, label = "Covid", vjust = 2, size = 5, color = "black") +
   theme_minimal() +
-  guides(color = guide_legend(title = "Cumulative Total"))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +  
+  scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months") 
+```
+Während der COVID-19-Pandemie gab einen Stopp von Löschungen (HR03), was bedeutet, dass weniger Unternehmen aus dem Handelsregister gelöscht wurden. Da die Löschungen nicht stattfanden, blieb die Anzahl der HR01-Neuregistrierungen im Verhältnis zur Gesamtheit der Einträge (HR01 + HR03) höher. Dies könnte ein Grund dafür sein, dass die Linie für den Anteil der Neuregistrierungen in dieser Zeit nach oben ging.
 
-# Create the log scale plot without the legend
-plot_log_scale <- ggplot(monthly_counts, aes(x = as.Date(paste0(year_month, "-01")))) +
-  geom_line(aes(y = cumulative_total, color = "Cumulative Total")) +
-  scale_y_log10() +
-  labs(title = "Cumulative Total Over Time (Log Scale)",
-       x = "Month",
-       y = "Cumulative Total (Log Scale)") +
+Da die HR01-Anmeldungen stattfanden, die HR03-Löschungen jedoch gestoppt wurden, führte dies zu einem künstlichen Anstieg des Anteils von HR01 in der Statistik. Nach Ende des Stopps von Löschungen kehrte das Verhältnis wieder zu einem normaleren Muster zurück.
+```{r}
+
+# Step 2: Summarize HR01 and HR03 counts by canton and quarter-year
+data_summary <- data %>%
+  group_by(quarter_year, kanton, subrubric) %>%
+  summarise(entries = n(), .groups = "drop") %>%
+  pivot_wider(names_from = subrubric, values_from = entries, values_fill = 0) %>%
+  mutate(total = HR01 + HR03,
+         proportion = HR01 / total)
+
+# Step 3: Define the function to calculate the confidence interval for proportions
+calc_confidence_interval <- function(proportion, total, alpha = 0.05) {
+  std_error <- sqrt((proportion * (1 - proportion)) / total)  # standard error
+  lower_bound <- proportion - qnorm(1 - alpha / 2) * std_error
+  upper_bound <- proportion + qnorm(1 - alpha / 2) * std_error
+  return(c(lower_bound, upper_bound))
+}
+
+# Step 4: Apply the confidence interval function for each canton/quarter combination
+data_summary <- data_summary %>%
+  rowwise() %>%
+  mutate(
+    lower_bound = calc_confidence_interval(proportion, total)[1],
+    upper_bound = calc_confidence_interval(proportion, total)[2]
+  ) %>%
+  ungroup()
+
+# Step 5: Create the faceted plot with only proportion and confidence interval
+ggplot(data_summary, aes(x = quarter_year)) +
+  # Add Covid period shading
+  geom_rect(
+    aes(xmin = covid_start, xmax = covid_end, ymin = -Inf, ymax = Inf),
+    fill = "orange", alpha = 0.01, color = NA 
+  ) +
+  # Line for proportion of HR01
+  geom_line(aes(y = proportion), color = "blue", linetype = "solid") +
+  # Confidence intervals as ribbon
+  geom_ribbon(aes(ymin = lower_bound, ymax = upper_bound), fill = "lightblue", alpha = 0.3) +
+  # Set y-axis limits to match the range of proportions
+  scale_y_continuous(name = "Proportion of HR01") +
+  # Facet by canton
+  facet_wrap(~ kanton, scales = "free_y") +
+  # Customize plot
+  labs(title = "Proportion of HR01 (New Registrations) Over Time by Kanton",
+       x = "Quarter-Year", y = "Proportion of HR01") +
   theme_minimal() +
-  theme(legend.position = "none")
+  theme(legend.position = "none",
+        plot.title = element_text(size = 14),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 8),
+        strip.text = element_text(size = 8),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
-# Combine the two plots using patchwork
-combined_plot <- plot_cumulative + plot_log_scale + plot_layout(ncol = 2)
-
-# Print the combined plot
-print(combined_plot)
 ```
 
 
@@ -534,8 +614,7 @@ ggplot(daily_counts, aes(x = HR03_count, y = HR01_count)) +
 
 
 ```{r}
-
-count_per_date <- shab_data %>%
+count_per_date <- data %>%
   group_by(date, subrubric) %>%
   summarise(count = n())
 
@@ -568,23 +647,19 @@ ggplot(count_per_date, aes(x = date, y = count, color = subrubric)) +
 
 ```
 
+
 ```{r warning=FALSE}
-current_year <- format(Sys.Date(), "%Y")
-# Convert the date column to Date type
-shab_data$date <- as.Date(shab_data$date)
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(patchwork)
 
-# Extract month and year from the date
-shab_data$month <- format(shab_data$date, "%m")
-shab_data$year <- format(shab_data$date, "%Y")
-
-# Process HR03 data
-hr03_data <- subset(shab_data, subrubric == "HR03")
+hr03_data <- subset(data, subrubric == "HR03" & year >= 2020)
 hr03_counts <- hr03_data %>%
   group_by(year, month) %>%
   summarise(count = n(), .groups = 'drop')
 
-# Process HR01 data
-hr01_data <- subset(shab_data, subrubric == "HR01")
+hr01_data <- subset(data, subrubric == "HR01" & year >= 2020)
 hr01_counts <- hr01_data %>%
   group_by(year, month) %>%
   summarise(count = n(), .groups = 'drop')
@@ -593,8 +668,8 @@ hr01_counts <- hr01_data %>%
 line_size_current <- 1
 line_size_other <- 0.5
 
-# Create the HR03 plot with adjusted line sizes
-plot_hr03 <- ggplot(hr03_counts, aes(x = month, y = count, group = year, color = year)) +
+# Create the HR03 plot with adjusted line sizes and gradient color for years, excluding 2018
+plot_hr03 <- ggplot(hr03_counts, aes(x = month, y = count, group = year, color = as.numeric(year))) +
   geom_line(aes(size = ifelse(year == current_year, line_size_current, line_size_other))) +
   labs(title = "Monthly HR03 Counts by Year",
        x = "Month",
@@ -603,10 +678,11 @@ plot_hr03 <- ggplot(hr03_counts, aes(x = month, y = count, group = year, color =
   scale_x_discrete(limits = sprintf("%02d", 1:12)) +
   theme_minimal() +
   scale_size_identity() +  # Ensure size is used as is
+  scale_color_gradient(low = "blue", high = "red") +  # Gradient from blue to red
   guides(size = "none")
 
-# Create the HR01 plot with adjusted line sizes
-plot_hr01 <- ggplot(hr01_counts, aes(x = month, y = count, group = year, color = year)) +
+# Create the HR01 plot with adjusted line sizes and gradient color for years, excluding 2018
+plot_hr01 <- ggplot(hr01_counts, aes(x = month, y = count, group = year, color = as.numeric(year))) +
   geom_line(aes(size = ifelse(year == current_year, line_size_current, line_size_other))) +
   labs(title = "Monthly HR01 Counts by Year",
        x = "Month",
@@ -615,6 +691,7 @@ plot_hr01 <- ggplot(hr01_counts, aes(x = month, y = count, group = year, color =
   scale_x_discrete(limits = sprintf("%02d", 1:12)) +
   theme_minimal() +
   scale_size_identity() +  # Ensure size is used as is
+  scale_color_gradient(low = "blue", high = "red") +  # Gradient from blue to red
   guides(size = "none")
 
 # Combine the plots using patchwork
@@ -622,67 +699,7 @@ combined_plot <- plot_hr03 + plot_hr01 + plot_layout(ncol = 1, heights = c(1, 1)
 
 # Print the combined plot
 print(combined_plot)
-```
-```{r}
-
-# Convert the date column to Date type
-shab_data$date <- as.Date(shab_data$date)
-
-# Extract month and year from the date
-shab_data$month <- format(shab_data$date, "%m")
-shab_data$year <- format(shab_data$date, "%Y")
-
-# Group years into the desired pairs
-shab_data$year_group <- case_when(
-  shab_data$year %in% c("2018", "2019") ~ "2018-2019",
-  shab_data$year %in% c("2020", "2021") ~ "2020-2021",
-  shab_data$year %in% c("2022", "2023") ~ "2022-2023",
-  shab_data$year == "2024" ~ "2024",
-  TRUE ~ NA_character_
-)
-
-# Process HR03 data
-hr03_data <- subset(shab_data, subrubric == "HR03" & !is.na(year_group))
-hr03_means <- hr03_data %>%
-  group_by(year_group, month) %>%
-  summarise(mean_count = mean(n()), .groups = 'drop')
-
-# Process HR01 data
-hr01_data <- subset(shab_data, subrubric == "HR01" & !is.na(year_group))
-hr01_means <- hr01_data %>%
-  group_by(year_group, month) %>%
-  summarise(mean_count = mean(n()), .groups = 'drop')
-
-# Create the HR03 plot with adjusted line sizes
-plot_hr03 <- ggplot(hr03_means, aes(x = month, y = mean_count, group = year_group, color = year_group)) +
-  geom_line(size = 1) +
-  labs(title = "Monthly HR03 Mean Counts by Year Groups",
-       x = "Month",
-       y = "Mean Count",
-       color = "Year Group") +
-  scale_x_discrete(limits = sprintf("%02d", 1:12)) +
-  theme_minimal()
-
-# Create the HR01 plot with adjusted line sizes
-plot_hr01 <- ggplot(hr01_means, aes(x = month, y = mean_count, group = year_group, color = year_group)) +
-  geom_line(size = 1) +
-  labs(title = "Monthly HR01 Mean Counts by Year Groups",
-       x = "Month",
-       y = "Mean Count",
-       color = "Year Group") +
-  scale_x_discrete(limits = sprintf("%02d", 1:12)) +
-  theme_minimal()
-
-# Combine the plots using patchwork
-combined_plot <- plot_hr03 / plot_hr01 + plot_layout(ncol = 1, heights = c(1, 1))
-
-# Print the combined plot
-print(combined_plot)
 
 ```
-
-
-```
-
 
 
