@@ -356,6 +356,15 @@ display: none;
 
 </div>
 
+<div id="TOC">
+<ul>
+<li><a href="#einführung" id="toc-einführung">Einführung</a></li>
+<li><a href="#hr01" id="toc-hr01">HR01</a></li>
+<li><a href="#hr03" id="toc-hr03">HR03</a></li>
+<li><a href="#zuwachs-an-firmen" id="toc-zuwachs-an-firmen">Zuwachs an
+Firmen</a></li>
+</ul>
+</div>
 
 <div id="einführung" class="section level2">
 <h2>Einführung</h2>
@@ -382,7 +391,9 @@ befinden sich auf folgender Seite:</p>
 <li><a href="https://www.kmu.admin.ch/kmu/de/home/praktisches-wissen/kmu-gruenden/firmengruendung/handelsregister.html">Handelsregister:
 Rechte und Pflichten für KMU</a></li>
 </ul>
-<pre class="r"><code>if (!require(tidyr)) install.packages(&quot;tidyr&quot;)
+<pre class="r"><code>#Change eval=TRUE if packages need to be installed
+
+if (!require(tidyr)) install.packages(&quot;tidyr&quot;)
 if (!require(httr)) install.packages(&quot;httr&quot;)
 if (!require(XML)) install.packages(&quot;XML&quot;)
 if (!require(dplyr)) install.packages(&quot;dplyr&quot;)
@@ -407,9 +418,9 @@ library(broom)
 library(forecast)
 library(scales)
 library(tidyr)
-library(tidytext)
-source(&quot;get_shab_data.R&quot;)</code></pre>
-<pre class="r"><code># Scrape alle relevanten Shab-Daten über einen Zeitraum. Es werden nur die Daten heruntergeladen welche noch nicht lokal gespeichert sind.
+library(tidytext)</code></pre>
+<pre class="r"><code>source(&quot;get_shab_data.R&quot;)
+# Scrape alle relevanten Shab-Daten über einen Zeitraum. Es werden nur die Daten heruntergeladen welche noch nicht lokal gespeichert sind.
 from_date &lt;- as.Date(&quot;2018-03-18&quot;)
 to_date &lt;- as.Date(&quot;2024-10-20&quot;)
 shab_data &lt;- Get_Shab_DF_from_range(from_date, to_date)
