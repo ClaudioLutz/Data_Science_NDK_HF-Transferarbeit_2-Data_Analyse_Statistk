@@ -59,6 +59,20 @@ library(scales)
 library(tidyr)
 library(tidytext)
 source("get_shab_data.R")
+
+calc_confidence_interval <- function(proportion, total, alpha = 0.05) {
+  if (is.na(total) || total == 0 || is.na(proportion) || proportion < 0 || proportion > 1) {
+    return(c(NA_real_, NA_real_))
+  }
+  # If proportion is 0 or 1, std_error will be 0. qnorm(..., sd = 0) correctly returns the mean.
+  std_error <- sqrt((proportion * (1 - proportion)) / total)
+  if (is.na(std_error)) { # Should be covered by initial checks, but as a safeguard
+      return(c(NA_real_, NA_real_))
+  }
+  lower_bound <- qnorm(alpha / 2, mean = proportion, sd = std_error)
+  upper_bound <- qnorm(1 - alpha / 2, mean = proportion, sd = std_error)
+  return(c(lower_bound, upper_bound))
+}
 ```
 
 
@@ -141,7 +155,7 @@ plot_cumulative <- ggplot(monthly_counts, aes(x = as.Date(paste0(year_month, "-0
   theme(legend.position = "none")
 
 # Create the log scale plot without the legend
-plot_log_scale <- ggplot(monthly_counts, aes(x = as.Date(paste0(year_month, "-01")))) +
+plot_log_scale <- ggplot(monthly_counts %>% dplyr::filter(cumulative_total > 0), aes(x = as.Date(paste0(year_month, "-01")))) +
   geom_line(aes(y = cumulative_total, color = "Cumulative Total")) +
   scale_y_log10() +
   labs(title = "Cumulatives Total auf Zeit (Log Scale)",
@@ -212,7 +226,7 @@ p <- ggplot(final_data, aes(x = year_month)) +
   )
 
 # Add Netto Zuwachs as a separate bar without stacking
-p + geom_col(data = final_data, aes(x = year_month, y = NettoZuwachs, fill = "Netto Zuwachs"), width = 0.3, color = "black", position = position_dodge(width = 0.9))
+p + geom_col(data = final_data, aes(x = year_month, y = NettoZuwachs, fill = "Netto Zuwachs"), width = 0.3, color = "black")
 ```
 
 ```{r Nettozuwachs_nach_Kanton}
@@ -267,7 +281,7 @@ p <- ggplot(final_data_kanton, aes(x = kanton)) +
   )
 
 # Add Netto Zuwachs as a separate bar without stacking
-p + geom_col(data = final_data_kanton, aes(x = kanton, y = NettoZuwachs, fill = "Netto Zuwachs"), width = 0.3, color = "black", position = position_dodge(width = 0.9))
+p + geom_col(data = final_data_kanton, aes(x = kanton, y = NettoZuwachs, fill = "Netto Zuwachs"), width = 0.3, color = "black")
 ```
 ```{r Prozentuale_Verteilung}
 # Calculate relative contributions of HR01 and HR03
@@ -286,22 +300,14 @@ ordered_kantons <- relative_contribution %>%
 relative_contribution <- relative_contribution %>%
   mutate(kanton = factor(kanton, levels = ordered_kantons))
 
-dp <- 1
-relative_contribution2 <- relative_contribution %>%
-  arrange(kanton, subrubric) %>%
-  group_by(kanton) %>%
-  mutate(y_text = percentage[2] + c(1, -1) * dp)
-
-ggplot(relative_contribution2, aes(x = kanton, y = percentage, fill = subrubric)) +
+ggplot(relative_contribution, aes(x = kanton, y = percentage, fill = subrubric)) +
   geom_col(color = "black") +  
-  coord_cartesian(ylim = c(30, 50)) + 
   
   # Labels for HR01 at the bottom of the bars
-  geom_text(
-    aes(label = round(percentage, 1), y = y_text), 
-    size = 3, 
-    color = "black"
-  ) +
+  geom_text(aes(label = ifelse(percentage > 5, paste0(round(percentage, 1), "%"), "")),
+            position = position_stack(vjust = 0.5),
+            size = 3,
+            color = "black") +
 
   labs(
     title = "Prozentuale Verteilung von Neueintragung und Löschungen nach Kanton",
@@ -474,12 +480,7 @@ monthly_counts_prop <- monthly_counts_prop %>%
 
 alpha <- 0.05  # 95% confidence level
 
-calc_confidence_interval <- function(proportion, total) {
-  std_error <- sqrt((proportion * (1 - proportion)) / total)  
-  lower_bound <- qnorm(alpha / 2, mean = proportion, sd = std_error)
-  upper_bound <- qnorm(1 - alpha / 2, mean = proportion, sd = std_error)
-  return(c(lower_bound, upper_bound))
-}
+# calc_confidence_interval is now defined in lade_libraries chunk
 
 monthly_counts_prop <- monthly_counts_prop %>%
   rowwise() %>%
@@ -518,12 +519,7 @@ data_summary <- data %>%
          proportion = HR01 / total)
 
 # Step 3: Define the function to calculate the confidence interval for proportions
-calc_confidence_interval <- function(proportion, total, alpha = 0.05) {
-  std_error <- sqrt((proportion * (1 - proportion)) / total)  # standard error
-  lower_bound <- proportion - qnorm(1 - alpha / 2) * std_error
-  upper_bound <- proportion + qnorm(1 - alpha / 2) * std_error
-  return(c(lower_bound, upper_bound))
-}
+# calc_confidence_interval is now defined in lade_libraries chunk
 
 # Step 4: Apply the confidence interval function for each canton/quarter combination
 data_summary <- data_summary %>%
@@ -654,12 +650,12 @@ library(ggplot2)
 library(dplyr)
 library(patchwork)
 
-hr03_data <- subset(data, subrubric == "HR03" & year >= 2020)
+hr03_data <- subset(data, subrubric == "HR03" & as.numeric(year) >= 2020)
 hr03_counts <- hr03_data %>%
   group_by(year, month) %>%
   summarise(count = n(), .groups = 'drop')
 
-hr01_data <- subset(data, subrubric == "HR01" & year >= 2020)
+hr01_data <- subset(data, subrubric == "HR01" & as.numeric(year) >= 2020)
 hr01_counts <- hr01_data %>%
   group_by(year, month) %>%
   summarise(count = n(), .groups = 'drop')
